@@ -4,8 +4,8 @@ views = Blueprint('views', __name__)
 
 @views.route('/dashboard')
 def dashboard():
-    return "<h1>dashboard<h1>"
+    return render_template("dashboard.html")
 
 @views.route('/profile')
 def profile():
-    return "<h1>profile<h1>"
+    return render_template("profile.html")

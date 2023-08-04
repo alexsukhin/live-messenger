@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        margin-top: 100px;
+        background-color: #f3f3f3;
+        font-family: noahFont;
+    }
+
+    h2 {
+        font-size: 220%;
+        display: inline;
+    }
+
+    .overlay-header {
+        position: absolute;
+        transform: translate(25px, 25px);
+        color: white;
+    }
+</style>
+
+<div class="container">
+    <div class="card mx-auto" style="width: 300px">
+        <img class="card-img-top" src="{{ url_for('static', filename='files/bluebox.png') }}">
+
+        <div class="overlay-header">
+            <h2>Live Messenger</h2>
+            <p><p>
+            <h2>Login</h2>
+        </div>
+
+        <div class="card-body">
+            <form>
+                <div class="form-floating">
+                    <input type="Username" id="Username" class="form-control" placeholder="Place username here">
+                    <label for="Username">Username</label>
+                </div>
+                <p></p>
+                <div class="form-floating">
+                    <input type="Password" id="Password" class="form-control" placeholder="Place password here">
+                    <label for="Password">Password</label>
+                </div>
+                <p></p>
+                <button class="btn btn-primary" style="background-color: #097c9c">
+                    LOG IN
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <p><p>
+    <p class="text-center">Don't have an account?<p>
+    <a class="nav-item nav-link" id="signup" href="/signup" style="color: #097c9c"><center>SIGN UP NOW</center><a>
+</div>
+
+
+
+{% endblock %}
