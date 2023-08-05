@@ -1,9 +1,21 @@
 from flask import Flask
+from flask_mysqldb import MySQL
 from . import config
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(config)
+
+    app.config['MYSQL_HOST'] = 'localhost'
+    app.config['MYSQL_USER'] = 'root'
+    app.config['MYSQL_PASSWORD'] = 'Xn828h!#Wg#MpYJg'
+    app.config['MYSQL_DB'] = 'messenger'  
+
+    try:
+        mysql = MySQL(app)
+    except Exception as e:
+        print("Error connecting to the database:", e)
+        #create better error handling
 
     from .views import views
     from .auth import auth
@@ -12,3 +24,5 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/')
 
     return app
+
+mysql = MySQL()
