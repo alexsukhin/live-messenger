@@ -4,6 +4,9 @@
   src: url('../files/NoahTextBold.otf')
   }  
 
+.margintop {
+  margin-top: 100px;
+}
 
 body::before {
   content: "XS";

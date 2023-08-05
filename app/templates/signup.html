@@ -6,7 +6,6 @@
 
 <style>
     body {
-        margin-top: 100px;
         background-color: #f3f3f3;
         font-family: noahFont;
     }
@@ -22,7 +21,9 @@
     }
 </style>
 
-<div class="container">
+
+
+<div class="container margintop">
     <div class="card mx-auto" style="width: 300px">
         <img class="card-img-top" src="{{ url_for('static', filename='files/bluebox.png') }}">
 
@@ -35,27 +36,27 @@
         <div class="card-body">
             <form method="POST">
                 <div class="form-floating">
-                    <input type="First Name" id="First Name" class="form-control" placeholder="Place first name here">
-                    <label for="First Name">First Name</label>
+                    <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Enter first name">
+                    <label for="firstName">First Name</label>
                 </div>
                 <p></p>
                 <div class="form-floating">
-                    <input type="Last Name" id="Last Name" class="form-control" placeholder="Place last name here">
-                    <label for="Last Name">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Enter last name">
+                    <label for="lastName">Last Name</label>
                 </div>
                 <p></p>
                 <div class="form-floating">
-                    <input type="Username" id="Username" class="form-control" placeholder="Place username here">
-                    <label for="Username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Enter username">
+                    <label for="username">Username</label>
                 </div>
                 <p></p>
                 <div class="form-floating">
-                    <input type="Password" id="Password" class="form-control" placeholder="Place password here">
-                    <label for="Password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Enter password">
+                    <label for="password">Password</label>
                 </div>
                 <p></p>
                 <button class="btn btn-primary" style="background-color: #097c9c">
-                    LOG IN
+                    SIGN UP
                 </button>
             </form>
         </div>

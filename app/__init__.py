@@ -1,9 +1,9 @@
 from flask import Flask
-import app.config
+from . import config
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(app.config)
+    app.config.from_object(config)
 
     from .views import views
     from .auth import auth
