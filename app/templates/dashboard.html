@@ -1,38 +1,64 @@
+
+
 {% extends "base.html" %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-
-
-
 <div class="container">
     <div class="row" style="margin-top: 20px;">
         <div class="col-3">
             <div class="row">
-                <div class="col" style="background-color: #9fc8ce; display: table;">
-                    <a class="nav-item nav-link" id="profile" href="/profile" style="display: table-cell; vertical-align: middle; height: 50px; color: #e9eeee">Username</a>
+                <div class="col nav-link-container">
+                    <a class="nav-item nav-link" id="profile" href="/profile">{{ user.username }}</a>
                 </div>
-                <div class="col" style="background-color: #9fc8ce; display: table;">
-                    <p style="display: table-cell; text-align: right; vertical-align: middle; height: 50px; color: #e9eeee;">Add User</p>
+                <div class="col text-right-container">
+                    <button type="button" class="btn add-btn right" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        Add User
+                    </button>
+                    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="/add_user" method="post">
+                                        <div class="mb-3">
+                                            <label for="username" class="form-label">Username</label>
+                                            <input type="text" class="form-control" id="username" name="username" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Add User</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>  
             </div>
+        </div>
+        
 
+        <div class="col-9 top-bar">
         </div>
-        <div class="col-9" style="background-color: #9fc8ce; display: table;">
-        </div>
-      </div>
+    </div>
     <div class="row">
-        <div class="col-3" style="background-color:blue;">
+        <div class="col-3 chat-list-container">
             <div class="chat-list">
                 <div class="chat-user" data-user-id="user1">User 1</div>
                 <div class="chat-user" data-user-id="user2">User 2</div>
+                <div class="chat-user" data-user-id="user3">User 3</div>
+                <div class="chat-user" data-user-id="user4">User 4</div>
+                <div class="chat-user" data-user-id="user5">User 5</div>
             </div>
-        <div class="col-9" style="background-color:yellow;">
+        </div>
+        <div class="col-9 introduction">
             <p></p>
         </div>
     </div>
 </div>
 
-
 {% endblock %}
+
+

@@ -6,9 +6,9 @@ views = Blueprint('views', __name__)
 @views.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", user=current_user)
 
 @views.route('/profile')
 @login_required
 def profile():
-    return render_template("profile.html")
+    return render_template("profile.html", user=current_user)

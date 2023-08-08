@@ -2,7 +2,7 @@
 @font-face {
   font-family: noahFont;
   src: url('../files/NoahTextBold.otf')
-  }  
+}  
 
 body {
   background-color: #f3f3f3;
@@ -13,42 +13,48 @@ body {
   margin-top: 100px;
 }
 
-body::before {
-  content: "XS";
-  color: red;
-  font-size: 2rem;
-  font-weight: bold;
-  position: fixed;
-  top: 0;
-  right: 0;
+.right {
+  float: right;
 }
 
-@media (min-width: 576px) {
-  body::before {
-    content: "SM";
-  }
+.chat-list-container {
+  background-color: #e9eeee;
+  height: 650px;
+  overflow-y: auto;
 }
 
-@media (min-width: 768px) {
-  body::before {
-    content: "MD";
-  }
+.chat-user {
+  height: 150px;
 }
 
-@media (min-width: 992px) {
-  body::before {
-    content: "LG";
-  }
+.nav-link-container {
+  background-color: #9fc8ce;
+  display: table;
 }
 
-@media (min-width: 1200px) {
-  body::before {
-    content: "XL";
-  }
+.nav-link {
+  display: table-cell;
+  vertical-align: middle;
+  height: 50px;
+  color: #e9eeee;
 }
 
-@media (min-width: 1400px) {
-  body::before {
-    content: "XXL";
-  }
+.text-right-container {
+  background-color: #9fc8ce;
+  display: table;
+}
+
+.add-btn {
+  height: 50px;
+  color: #e9eeee;
+}
+
+.top-bar {
+  background-color: #9fc8ce;
+  display: table;
+}
+
+.introduction {
+  background-color:#9fc8ce;
+  height: 650px;
 }

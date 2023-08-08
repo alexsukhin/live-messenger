@@ -45,7 +45,7 @@ def sign_up():
             else:
                 flash("Error creating account.", category="error")
 
-    return render_template("signup.html")
+    return render_template("signup.html", user=current_user)
     
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -67,7 +67,7 @@ def login():
             login_user(objUser)
             return redirect('/dashboard')
 
-    return render_template("login.html", boolean=True)
+    return render_template("login.html", user=current_user)
 
 @auth.route('/logout')
 @login_required
