@@ -2,22 +2,23 @@ from flask import Flask
 from flask_mysqldb import MySQL
 from flask_login import LoginManager
 from .models import User
-from . import config
+from .config import MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, SECRET_KEY
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(config)
 
-    app.config['MYSQL_HOST'] = 'localhost'
-    app.config['MYSQL_USER'] = 'root'
-    app.config['MYSQL_PASSWORD'] = 'Xn828h!#Wg#MpYJg'
-    app.config['MYSQL_DB'] = 'messenger'  
+    app.config['MYSQL_HOST'] = MYSQL_HOST
+    app.config['MYSQL_USER'] = MYSQL_USER
+    app.config['MYSQL_PASSWORD'] = MYSQL_PASSWORD
+    app.config['MYSQL_DB'] = MYSQL_DB
+    app.config['SECRET_KEY'] = SECRET_KEY
 
     try:
         mysql = MySQL(app)
     except Exception as e:
         print("Error connecting to the database:", e)
-        #create better error handling
+        # Add better error handling here
 
     from .views import views
     from .auth import auth

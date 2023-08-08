@@ -1,5 +1,5 @@
-from . import mysql
 import hashlib
+from . import mysql
 
 def getUser(username):
     conn = mysql.connection

@@ -1,11 +1,13 @@
 from flask import Blueprint, redirect, render_template, request, flash
+from flask_login import login_user, login_required, logout_user, current_user
+import hashlib
 from . import mysql
 from .queries import getUser, insertUser
 from .models import User
-import hashlib
-from flask_login import login_user, login_required, logout_user, current_user
 
 auth = Blueprint('auth', __name__)
+
+#fix bug - user can log into another account even if in an account
 
 @auth.route('/')
 def default():
@@ -19,9 +21,9 @@ def sign_up():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        user = getUser(username)
+        existingUser = getUser(username)
 
-        if user:    
+        if existingUser:    
             flash("Username already exists", category="error")
         elif len(firstName) > 25:
             flash("First name must be 25 characters or less.", category="error")
@@ -33,10 +35,15 @@ def sign_up():
             flash("Password must be 50 characters or less.", category="error")
         else:
             insertUser(username, password, firstName, lastName, 'test')
-            flash("Account created!", category="success")
-            objUser = User(*user)
-            login_user(objUser)
-            return redirect('/dashboard')
+            newUser = getUser(username)
+
+            if newUser:
+                objUser = User(*newUser)
+                login_user(objUser)
+                flash("Account created!", category="success")
+                return redirect('/dashboard')
+            else:
+                flash("Error creating account.", category="error")
 
     return render_template("signup.html")
     
@@ -59,7 +66,7 @@ def login():
             objUser = User(*user)
             login_user(objUser)
             return redirect('/dashboard')
-            
+
     return render_template("login.html", boolean=True)
 
 @auth.route('/logout')
