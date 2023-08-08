@@ -1,24 +1,11 @@
 from flask import Blueprint, redirect, render_template, request, flash
 from . import mysql
+from .queries import getUser, insertUser
+from .models import User
 import hashlib
-
+from flask_login import login_user, login_required, logout_user, current_user
 
 auth = Blueprint('auth', __name__)
-
-def insert_user(Username, Password, firstName, lastName, PublicRSAKey):
-    
-    HashedPassword = hashlib.sha256(Password.encode()).hexdigest()
-
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = "INSERT INTO users (Username, HashedPassword, FirstName, LastName, PublicRSAKey) VALUES (%s, %s, %s, %s, %s);"
-    values = (Username, HashedPassword, firstName, lastName, PublicRSAKey)
-    #print("SQL query:", cursor.mogrify(sql, values))  # This will print the formatted query
-    cursor.execute(sql, values)
-
-    conn.commit()
-    cursor.close()  
 
 @auth.route('/')
 def default():
@@ -32,7 +19,11 @@ def sign_up():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        if len(firstName) > 25:
+        user = getUser(username)
+
+        if user:    
+            flash("Username already exists", category="error")
+        elif len(firstName) > 25:
             flash("First name must be 25 characters or less.", category="error")
         elif len(lastName) > 25:
             flash("Last name must be 25 characters or less.", category="error")
@@ -41,18 +32,38 @@ def sign_up():
         elif len(password) > 50:
             flash("Password must be 50 characters or less.", category="error")
         else:
-            insert_user(username, password, firstName, lastName, 'test')
+            insertUser(username, password, firstName, lastName, 'test')
             flash("Account created!", category="success")
+            objUser = User(*user)
+            login_user(objUser)
             return redirect('/dashboard')
 
     return render_template("signup.html")
     
 
 @auth.route('/login', methods=['GET', 'POST'])
-def login():
+def login():    
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        loginHashedPassword = hashlib.sha256(password.encode()).hexdigest()
+        user = getUser(username)
+
+        if user is None:
+            flash("Username not found.", category="error")
+        elif loginHashedPassword != user[2]:
+            flash("Incorrect password.", category="error")
+        else:
+            flash("Logged in successfully!", category="success")
+            objUser = User(*user)
+            login_user(objUser)
+            return redirect('/dashboard')
+            
     return render_template("login.html", boolean=True)
 
-
 @auth.route('/logout')
+@login_required
 def logout():
-    return "<p>Logout<p>"
+    logout_user()
+    return redirect('/login')

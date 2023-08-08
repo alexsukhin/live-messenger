@@ -3,5 +3,36 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>This is the dashboard page<h1>
+
+
+
+<div class="container">
+    <div class="row" style="margin-top: 20px;">
+        <div class="col-3">
+            <div class="row">
+                <div class="col" style="background-color: #9fc8ce; display: table;">
+                    <a class="nav-item nav-link" id="profile" href="/profile" style="display: table-cell; vertical-align: middle; height: 50px; color: #e9eeee">Username</a>
+                </div>
+                <div class="col" style="background-color: #9fc8ce; display: table;">
+                    <p style="display: table-cell; text-align: right; vertical-align: middle; height: 50px; color: #e9eeee;">Add User</p>
+                </div>  
+            </div>
+
+        </div>
+        <div class="col-9" style="background-color: #9fc8ce; display: table;">
+        </div>
+      </div>
+    <div class="row">
+        <div class="col-3" style="background-color:blue;">
+            <div class="chat-list">
+                <div class="chat-user" data-user-id="user1">User 1</div>
+                <div class="chat-user" data-user-id="user2">User 2</div>
+            </div>
+        <div class="col-9" style="background-color:yellow;">
+            <p></p>
+        </div>
+    </div>
+</div>
+
+
 {% endblock %}

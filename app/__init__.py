@@ -1,5 +1,7 @@
 from flask import Flask
 from flask_mysqldb import MySQL
+from flask_login import LoginManager
+from .models import User
 from . import config
 
 def create_app():
@@ -22,6 +24,26 @@ def create_app():
 
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
+
+    login_manager = LoginManager(app)
+    login_manager.login_view = 'auth.login'
+
+    @login_manager.user_loader
+    def loadUser(userID):
+        conn = mysql.connection
+        cursor = conn.cursor()
+
+        sql = "SELECT * FROM users WHERE UserID = %s"
+        cursor.execute(sql, (userID,))
+        user = cursor.fetchone()
+
+        cursor.close()
+
+        if user:
+            return User(*user)
+        else:
+            return None
+
 
     return app
 
