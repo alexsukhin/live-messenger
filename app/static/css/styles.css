@@ -17,6 +17,10 @@ body {
   float: right;
 }
 
+.chat-window {
+  display: none;
+}
+
 .chat-list-container {
   background-color: #e9eeee;
   height: 650px;
@@ -32,7 +36,7 @@ body {
   display: table;
 }
 
-.nav-link {
+.nav-link-dashboard {
   display: table-cell;
   vertical-align: middle;
   height: 50px;

@@ -62,9 +62,9 @@ def login():
         elif loginHashedPassword != user[2]:
             flash("Incorrect password.", category="error")
         else:
-            flash("Logged in successfully!", category="success")
             objUser = User(*user)
             login_user(objUser)
+            flash("Logged in successfully!", category="success")
             return redirect('/dashboard')
 
     return render_template("login.html", user=current_user)
