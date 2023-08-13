@@ -28,7 +28,9 @@ body {
 }
 
 .chat-user {
-  height: 150px;
+  height: 75px;
+  padding: 4px 0;
+  margin: 7px 0px 0px 0px;
 }
 
 .nav-link-container {

@@ -64,26 +64,30 @@ def getChatUsers(userID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = """SELECT UserID, FirstName, LastName, NotificationCounter, c.Timestamp, co.Timestamp
+    sql = """SELECT UserID, Username, FirstName, LastName, NotificationCounter, c.Timestamp, co.Timestamp
     FROM users u
     JOIN connections c ON (c.SenderID = u.userID OR c.RecipientID = u.userID)
     LEFT JOIN conversations co ON (c.connectionID = co.connectionID)
-    WHERE (c.SenderID = %s OR c.RecipientID = %s)
+    WHERE (c.SenderID = %s OR c.RecipientID = %s) AND u.UserID != %s
     ORDER BY NotificationCounter DESC, co.Timestamp DESC, c.Timestamp DESC;"""
-    cursor.execute(sql, (userID, userID,))
+    cursor.execute(sql, (userID, userID, userID,))
     chatUsers = cursor.fetchall()
 
     cursor.close()
 
-    chatUsersDict = []
+    chatUsersList = []
 
-    #implement for loop to put users into usersdict
+    for user in chatUsers:
+        chatUsersDict = {
+            "userID": user[0],
+            "username": user[1],
+            "firstName": user[2],
+            "lastName": user[3]
+        }
+        
+        chatUsersList.append(chatUsersDict)
 
-    chatUsersDict = {
-        "userID": chatUsers[0],
-        "firstName": chatUsers[1],
-        "lastName": chatUsers[2]
-    }
 
-    return chatUsersDict
+
+    return chatUsersList
 

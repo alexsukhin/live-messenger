@@ -3,7 +3,13 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container">
+
+<style>
+h {
+    font-size: 18px
+}
+</style>
+<div class="container" id="dashboard">
     <div class="row" style="margin-top: 20px;">
         <div class="col-3">
             <div class="row">
@@ -29,7 +35,7 @@
                                             <label for="username">Username</label>
                                         </div>
                                         <p><p>
-                                        <button class="btn" style="background-color: #9fc8ce; color: white;">Add User</button>
+                                        <button class="btn" id="add-user-button" style="background-color: #9fc8ce; color: white;">Add User</button>
                                     </form>
                                 </div>
                             </div>
@@ -46,22 +52,16 @@
     </div>
     <div class="row">
         <div class="col-3 chat-list-container">
-            <div class="chat-list">
-                <div class="chat-user" data-user-id = "{{ user_id }}">
-                    {{user_first_name}} {{ user_last_name }}
-                </div>
+            <div class="chat-list" id="chat-list">
             </div>
-        </div>
+        </div>      
         <div class="col-9 introduction">
             <div class="chat-window" id="chat-user1">
 
             </div>
 
-
-
-
-<!--             <h2 style="text-align: center; color: #e9eeee; line-height: 175px; font-size: 70px;">Live Messenger<h2>
-            <h2 style="text-align: center; color: #e9eeee; font-size: 30px;">Select a user to start messaging<h2> -->
+            <h2 style="text-align: center; color: #e9eeee; line-height: 175px; font-size: 70px;">Live Messenger<h2>
+            <h2 style="text-align: center; color: #e9eeee; font-size: 30px;">Select a user to start messaging<h2>
         </div>
     </div>
 </div>

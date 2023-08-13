@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, render_template, request, flash
+from flask import Blueprint, redirect, render_template, request, flash, jsonify
 from flask_login import login_required, current_user
 from .queries import getUser, insertConnection, connectionExists, getChatUsers
 
@@ -37,5 +37,4 @@ def profile():
 @login_required
 def get_chat_users():
     chatUsers = getChatUsers(current_user.id)
-    print(chatUsers)
-    return jsonify(chatData)
+    return jsonify(chatUsers)
