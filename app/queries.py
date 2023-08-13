@@ -82,7 +82,8 @@ def getChatUsers(userID):
             "userID": user[0],
             "username": user[1],
             "firstName": user[2],
-            "lastName": user[3]
+            "lastName": user[3],
+            "notificationCounter": user[4]
         }
         
         chatUsersList.append(chatUsersDict)

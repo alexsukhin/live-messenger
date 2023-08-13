@@ -6,48 +6,58 @@
 
 <style>
 h {
-    font-size: 18px
+    font-size: 18px;
+}
+
+h2 {
+    float: right;
+    font-size: 18px;
+}
+
+h3 {
+    text-align: center;
+    color: #e9eeee;
+}
+.flex {
+    display: flex;
+    background-color: #9fc8ce;
+    align-items: center;
+    height: 50px;
 }
 </style>
+
 <div class="container" id="dashboard">
     <div class="row" style="margin-top: 20px;">
-        <div class="col-3">
-            <div class="row">
-                <div class="col nav-link-container">
-                    <a class="nav-item nav-link-dashboard" id="profile" href="/profile">{{ user.username }}</a>
-                </div>
-                <div class="col text-right-container">
-                    <button type="button" class="btn add-btn right" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                        Add User
-                    </button>
+        <div class="col-3 flex justify-content-between">
+            <a class="p-2 white" id="profile" href="/profile">{{ user.username }}</a>
+            <button type="button" class="p-2 btn white" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                Add User
+            </button>
 
-                    <div class="modal fade" id="addUserModal">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal fade" id="addUserModal">
+                <div class="modal-dialog">
+                     <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="POST">
+                                <div class="form-floating">
+                                    <input type="username" id="username" name="username" class="form-control" placeholder="Enter username">
+                                    <label for="username">Username</label>
                                 </div>
-                                <div class="modal-body">
-                                    <form method="POST">
-                                        <div class="form-floating">
-                                            <input type="username" id="username" name="username" class="form-control" placeholder="Enter username">
-                                            <label for="username">Username</label>
-                                        </div>
-                                        <p><p>
-                                        <button class="btn" id="add-user-button" style="background-color: #9fc8ce; color: white;">Add User</button>
-                                    </form>
-                                </div>
-                            </div>
+                                <p><p>
+                                <button class="btn" id="add-user-button" style="background-color: #9fc8ce; color: white;">Add User</button>
+                            </form>
                         </div>
                     </div>
-
-                </div>  
+                </div>
             </div>
         </div>
         
 
-        <div class="col-9 top-bar">
+        <div class="col-9 flex">
         </div>
     </div>
     <div class="row">
@@ -55,13 +65,14 @@ h {
             <div class="chat-list" id="chat-list">
             </div>
         </div>      
-        <div class="col-9 introduction">
-            <div class="chat-window" id="chat-user1">
+        <div class="col-9 bluebackground" style="height: 650px;">
 
+            <div>
+                <h3 style="line-height: 175px; font-size: 70px;">Live Messenger<h3>
+                <h3 style="font-size: 30px;">Select a user to start messaging<h3>
             </div>
-
-            <h2 style="text-align: center; color: #e9eeee; line-height: 175px; font-size: 70px;">Live Messenger<h2>
-            <h2 style="text-align: center; color: #e9eeee; font-size: 30px;">Select a user to start messaging<h2>
+            <div class="chat-window" id="chat-user1">
+            </div>
         </div>
     </div>
 </div>

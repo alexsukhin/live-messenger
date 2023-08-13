@@ -17,7 +17,8 @@ function updateChatList() {
                 const usernameElement = document.createElement('h');
                 const firstNameElement = document.createElement('h');   
                 const lastNameElement = document.createElement('h');
-                const spaceElement = document.createTextNode(' ')
+                const notificationCounterElement = document.createElement('h2');
+                const spaceElement = document.createTextNode(' ');
                 const br = document.createElement('br');
                 const hr = document.createElement('hr');
 
@@ -25,8 +26,14 @@ function updateChatList() {
                 firstNameElement.textContent = user.firstName;
                 lastNameElement.textContent = user.lastName;
 
-
                 chatUserElement.appendChild(usernameElement);
+
+                if (user.notificationCounter !== 0) {
+                    notificationCounterElement.textContent = user.notificationCounter;
+                    chatUserElement.appendChild(notificationCounterElement);
+                }
+
+                chatUserElement.appendChild(notificationCounterElement);
                 chatUserElement.appendChild(br);
                 chatUserElement.appendChild(firstNameElement);
                 chatUserElement.appendChild(spaceElement);
@@ -46,4 +53,5 @@ document.addEventListener('DOMContentLoaded', () => {
         updateChatList();
     });
 });
+
 

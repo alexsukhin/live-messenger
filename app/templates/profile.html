@@ -3,5 +3,56 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<h1>This is the profile page<h1>
+
+<style>
+    .top-flex {
+        display: flex;
+        background-color: #9fc8ce;
+        align-items: center;
+        height: 50px;
+    }
+
+    .main-flex {
+        display: flex;
+        background-color: #e9eeee;
+        height: 487.5px;
+    }
+</style>
+
+<div class="row" style="margin-top: 20px;">
+    <div class="col-12 top-flex justify-content-between">
+        <div class="p-2 white">Profile Page</div>
+        <a href="/dashboard" class="p-2 white">BACK</a>
+    </div>
+    <div class="col-12 main-flex flex-column justify-content-around" style="line-height: 50px;">
+        <div class="p-2" style="margin-top: 30px;">
+            Your name 
+            <button class="btn" style="position: absolute; top: 91px; left: 190px;" data-bs-toggle="modal" data-bs-target="#changeNameModal">
+                <img src="{{ url_for('static', filename='files/pencil2.png') }}" width="60">
+            </button>
+            <br>
+            {{ current_user.firstName }} {{ current_user.lastName }} <hr>
+        </div>
+        <div class="p-2">
+            Your username
+            <button class="btn" style="position: absolute; top: 247px; left: 218px;" data-bs-toggle="modal" data-bs-target="#changeUsernameModal">
+                <img src="{{ url_for('static', filename='files/pencil2.png') }}" width="60">
+            </button>
+            <br>
+            {{ current_user.username }} <hr>
+        </div>
+        <div class="p-2">
+            <button type="button" class="btn" style="background-color: #9fc8ce;" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                Change password
+            </button>
+        </div>
+        <div class="p-2">
+            <a href="/logout" class="button btn" style="background-color: #9fc8ce;">LOGOUT</a>
+        </div>
+    </div>
+    <div class="col-12 main-flex flex-column justify-content-between" style="height: 162.5px"></div>
+</div>
+
+
+
 {% endblock %}

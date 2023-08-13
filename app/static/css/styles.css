@@ -9,12 +9,16 @@ body {
   font-family: noahFont;
 }
 
-.margintop {
-  margin-top: 100px;
+.white {
+  color: #e9eeee;
 }
 
-.right {
-  float: right;
+.blue {
+  color: #9fc8ce;
+}
+
+.bluebackground {
+  background-color: #9fc8ce;
 }
 
 .chat-window {
@@ -31,36 +35,4 @@ body {
   height: 75px;
   padding: 4px 0;
   margin: 7px 0px 0px 0px;
-}
-
-.nav-link-container {
-  background-color: #9fc8ce;
-  display: table;
-}
-
-.nav-link-dashboard {
-  display: table-cell;
-  vertical-align: middle;
-  height: 50px;
-  color: #e9eeee;
-}
-
-.text-right-container {
-  background-color: #9fc8ce;
-  display: table;
-}
-
-.add-btn {
-  height: 50px;
-  color: #e9eeee;
-}
-
-.top-bar {
-  background-color: #9fc8ce;
-  display: table;
-}
-
-.introduction {
-  background-color:#9fc8ce;
-  height: 650px;
 }
