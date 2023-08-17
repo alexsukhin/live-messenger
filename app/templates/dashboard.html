@@ -5,25 +5,26 @@
 {% block content %}
 
 <style>
-h {
-    font-size: 18px;
-}
+    h {
+        font-size: 18px;
+    }
 
-h2 {
-    float: right;
-    font-size: 18px;
-}
+    h2 {
+        float: right;
+        font-size: 18px;
+    }
 
-h3 {
-    text-align: center;
-    color: #e9eeee;
-}
-.flex {
-    display: flex;
-    background-color: #9fc8ce;
-    align-items: center;
-    height: 50px;
-}
+    h3 {
+        text-align: center;
+        color: #e9eeee;
+    }
+    
+    .flex {
+        display: flex;
+        background-color: #9fc8ce;
+        align-items: center;
+        height: 50px;
+    }
 </style>
 
 <div class="container" id="dashboard">
@@ -33,27 +34,6 @@ h3 {
             <button type="button" class="p-2 btn white" data-bs-toggle="modal" data-bs-target="#addUserModal">
                 Add User
             </button>
-
-            <div class="modal fade" id="addUserModal">
-                <div class="modal-dialog">
-                     <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form method="POST">
-                                <div class="form-floating">
-                                    <input type="username" id="username" name="username" class="form-control" placeholder="Enter username">
-                                    <label for="username">Username</label>
-                                </div>
-                                <p><p>
-                                <button class="btn" id="add-user-button" style="background-color: #9fc8ce; color: white;">Add User</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         
 
@@ -72,6 +52,29 @@ h3 {
                 <h3 style="font-size: 30px;">Select a user to start messaging<h3>
             </div>
             <div class="chat-window" id="chat-user1">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- modals -->
+
+<div class="modal fade" id="addUserModal">
+    <div class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    <div class="form-floating">
+                        <input type="username" id="username" name="username" class="form-control" placeholder="Enter username">
+                        <label for="username">Username</label>
+                    </div>
+                    <p><p>
+                    <button class="btn" id="add-user-button" style="background-color: #9fc8ce; color: white;">Add User</button>
+                </form>
             </div>
         </div>
     </div>

@@ -53,6 +53,81 @@
     <div class="col-12 main-flex flex-column justify-content-between" style="height: 162.5px"></div>
 </div>
 
+<!-- modals -->
+
+<div class="modal fade" id="changeNameModal">
+    <div class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeNameModal">Change Name</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    <div class="form-floating">
+                        <input type="firstName" id="firstName" name="firstName" class="form-control" placeholder="Enter first name">
+                        <label for="firstName">First Name</label>
+                    </div>
+                    <p><p>
+                    <div class="form-floating">
+                        <input type="lastName" id="lastName" name="lastName" class="form-control" placeholder="Enter last name">
+                        <label for="lastName">Last Name</label>
+                    </div>
+                    <p><p>
+                    <button class="btn" name="changeName" id="change-name-button" style="background-color: #9fc8ce; color: white;">Change Name</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="changeUsernameModal">
+    <div class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeUsernameModalLabel">Change Username</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    <div class="form-floating">
+                        <input type="username" id="username" name="username" class="form-control" placeholder="Enter username">
+                        <label for="username">Username</label>
+                    </div>
+                    <p><p>
+                    <button class="btn" name="changeUsername" id="change-username-button" style="background-color: #9fc8ce; color: white;">Change Username</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="changePasswordModal">
+    <div class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    <div class="form-floating">
+                        <input type="password" id="currentPassword" name="currentPassword" class="form-control" placeholder="Enter current password">
+                        <label for="currentPassword">Current Password</label>
+                    </div>
+                    <p><p>
+                    <div class="form-floating">
+                        <input type="password" id="newPassword" name="newPassword" class="form-control" placeholder="Enter new password">
+                        <label for="newPassword">New Password</label>
+                    </div>
+                    <p><p>
+                    <button class="btn" name="changePassword" id="change-password-button" style="background-color: #9fc8ce; color: white;">Change Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 {% endblock %}

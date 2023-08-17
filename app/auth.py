@@ -23,6 +23,8 @@ def sign_up():
 
         existingUser = getUser(username)
 
+        #make these validations better for character limits
+
         if existingUser:    
             flash("Username already exists", category="error")
         elif len(firstName) > 25:

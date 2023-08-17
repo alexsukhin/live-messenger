@@ -30,6 +30,42 @@ def insertConnection(senderID, recipientID):
 
 #UPDATE queries
 
+def updateName(userID, firstName, lastName):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET FirstName = %s, LastName = %s WHERE UserID = %s;"
+    values = (firstName, lastName, userID)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
+def updateUsername(userID, newUsername):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET Username = %s WHERE UserID = %s;"
+    values = (newUsername, userID)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
+def updatePasword(userID, password):
+
+    hashedPassword = hashlib.sha256(password.encode()).hexdigest()
+
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET HashedPassword = %s WHERE UserID = %s;"
+    values = (hashedPassword, userID)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
 #SELECT queries
 
 def getUser(username):

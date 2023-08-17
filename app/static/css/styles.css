@@ -9,6 +9,8 @@ body {
   font-family: noahFont;
 }
 
+/*https://stackoverflow.com/questions/58656335/prevent-flash-messages-from-moving-below-container-down*/
+
 .white {
   color: #e9eeee;
 }
