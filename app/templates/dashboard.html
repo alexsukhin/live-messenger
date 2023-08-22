@@ -18,7 +18,7 @@
         text-align: center;
         color: #e9eeee;
     }
-    
+
     .flex {
         display: flex;
         background-color: #9fc8ce;
@@ -44,14 +44,26 @@
         <div class="col-3 chat-list-container">
             <div class="chat-list" id="chat-list">
             </div>
-        </div>      
-        <div class="col-9 bluebackground" style="height: 650px;">
-
-            <div>
-                <h3 style="line-height: 175px; font-size: 70px;">Live Messenger<h3>
-                <h3 style="font-size: 30px;">Select a user to start messaging<h3>
+        </div>
+        <div class="col-9" style="margin: 0px -12px 0px -12px; width: 996px">
+            <div class="bluebackground" id="introduction" style="height: 650px;">
+                    <h3 style="line-height: 175px; font-size: 70px;">Live Messenger<h3>
+                    <h3 style="font-size: 30px;">Select a user to start messaging<h3>
             </div>
-            <div class="chat-window" id="chat-user1">
+            <div class="chatbox" id="chatbox-user" data-user-id="user1" style="display: none;">
+                <div class="greybackground" style="height: 568.75px; overflow-y: auto; display: flex; flex-direction: column-reverse;">
+                    <div class="recipient-message">Message 1</div>
+                    <div class="sender-message">Message 2</div>
+                </div>
+                <div class="bluebackground" style="height: 81.25px;">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <div style="width: 92.5%; margin: auto; padding-top: 20.3125px">
+                                <input type="message" id="message" name="message" class="form-control" placeholder="Enter message">
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

@@ -12,7 +12,7 @@ function updateChatList() {
             data.forEach(user => {
                 const chatUserElement = document.createElement('div');
                 chatUserElement.className = 'chat-user';
-                chatUserElement.dataset.userId = user.userID;
+                chatUserElement.dataset.userID = user.userID;
 
                 const usernameElement = document.createElement('h');
                 const firstNameElement = document.createElement('h');   
@@ -47,7 +47,26 @@ function updateChatList() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateChatList();
+    updateChatList()
+
+    const chatList = document.getElementById('chat-list');
+    const chatbox = document.getElementById('chatbox-user');
+    const introduction = document.getElementById('introduction');
+
+    chatList.addEventListener('click', event => {
+        const clickedUser = event.target.closest('.chat-user');
+        
+        const chatUsers = chatList.querySelectorAll('.chat-user');
+        chatUsers.forEach(user => {
+            user.style.backgroundColor = ''
+        });
+
+        clickedUser.style.backgroundColor = '#dde4e4';
+
+        introduction.style.display = 'none';
+        chatbox.style.display = 'block';
+        chatbox.dataset.recipientID = userID;
+    })
 
     document.querySelector("#add-user-button").addEventListener("click", () => {
         updateChatList();

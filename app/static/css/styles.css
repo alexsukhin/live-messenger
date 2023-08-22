@@ -23,6 +23,10 @@ body {
   background-color: #9fc8ce;
 }
 
+.greybackground {
+  background-color: #dde4e4;
+}
+
 .chat-window {
   display: none;
 }
@@ -34,7 +38,29 @@ body {
 }
 
 .chat-user {
-  height: 75px;
-  padding: 4px 0;
-  margin: 7px 0px 0px 0px;
+  height: 80px;
+  padding: 10px 10px 0px 10px;
+  margin: 0px -12px -0px -12px;
+}
+
+.sender-message {
+  width: 425px;
+  min-height: 35px;
+  border: 1px solid #73c2cd;
+  background-color: #9fc8ce;
+  margin-left: 525px;
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.recipient-message {
+  width: 425px;
+  min-height: 35px;
+  border: 1px solid #a3a0a0;
+  background-color: #c2c6c6;
+  margin-left: 25px;
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 5px;
 }

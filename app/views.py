@@ -9,25 +9,31 @@ views = Blueprint('views', __name__)
 @login_required
 def dashboard():
     if request.method == "POST":
-        username = request.form.get("username")
-        recipient = getUser(username)
+        if "username" in request.form:
+            username = request.form.get("username")
+            recipient = getUser(username)
 
-        senderID = current_user.id
+            senderID = current_user.id
 
-        if recipient is None:
-            flash("Username not found.", category="error")
-        else:
-            recipientID = recipient[0]
-
-            if connectionExists(senderID, recipientID) == True:
-                flash("User already exists in your chat list.", category="error")
-            elif senderID == recipientID:
-                flash("You cannot add yourself.", category="error")
+            if recipient is None:
+                flash("Username not found.", category="error")
             else:
-                insertConnection(senderID, recipientID)
-                flash("Successfully added user!", category="success")
+                recipientID = recipient[0]
+
+                if connectionExists(senderID, recipientID) == True:
+                    flash("User already exists in your chat list.", category="error")
+                elif senderID == recipientID:
+                    flash("You cannot add yourself.", category="error")
+                else:
+                    insertConnection(senderID, recipientID)
+                    flash("Successfully added user!", category="success")
+            
+        elif "message" in request.form:
+            message = request.form.get("message")
+            senderID = current_user.id
 
     return render_template("dashboard.html", user=current_user)
+
 
 @views.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -80,3 +86,13 @@ def profile():
 def get_chat_users():
     chatUsers = getChatUsers(current_user.id)
     return jsonify(chatUsers)
+
+@views.route('/get-chat-messages')
+@login_required
+def get_chat_messages():
+    pass
+
+@views.route('/check-conversation')
+@login_required
+def check_conversation():
+    pass

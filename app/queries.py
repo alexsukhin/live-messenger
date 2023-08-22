@@ -26,7 +26,29 @@ def insertConnection(senderID, recipientID):
     cursor.execute(sql, values)
 
     conn.commit()
+    cursor.close()
+
+def insertConversation(connectionID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "INSERT INTO conversations (ConnectionID) VALUES (%s);"
+    cursor.execute(sql, (connectionID,))
+
+    conn.commit()
+    cursor.close()
+
+def insertMessage(sessionID, senderID, recipientID, encryptedContent, IV, dataFormat):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, IV, DataFormat) VALUES (%s, %s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, encryptedContent, IV, dataFormat,)
+    cursor.execute(sql, values)
+
+    conn.commit()
     cursor.close()  
+
 
 #UPDATE queries
 
@@ -79,23 +101,6 @@ def getUser(username):
     cursor.close()
     return user
 
-def connectionExists(senderID, recipientID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """SELECT COUNT(*) FROM connections
-     WHERE (SenderID = %s AND RecipientID = %s)
-     OR (SenderID = %s AND RecipientID = %s);"""
-    cursor.execute(sql, (senderID, recipientID, recipientID, senderID))
-    connection = cursor.fetchone()
-
-    cursor.close()
-
-    if connection[0] > 0:
-        return True
-    else:
-        return False
-
 def getChatUsers(userID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -128,3 +133,50 @@ def getChatUsers(userID):
 
     return chatUsersList
 
+def getChatMessages(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql="""SELECT * FROM messages
+    WHERE (SenderID = %s AND RecipientID = %s)
+        OR (SenderID = %s AND RecipientID = %s)
+    ORDER BY Timestamp ASC;"""
+    cursor.execute(sql, (senderID, recipientID, recipientID, senderID))
+    messages = cursor.fetchall()
+
+    cursor.close()
+
+    return messages
+
+
+def getConnectionID(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+
+
+    cursor.close()
+
+
+def connectionExists(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT COUNT(*) FROM connections
+     WHERE (SenderID = %s AND RecipientID = %s)
+     OR (SenderID = %s AND RecipientID = %s);"""
+    cursor.execute(sql, (senderID, recipientID, recipientID, senderID))
+    connection = cursor.fetchone()
+
+    cursor.close()
+
+    if connection[0] > 0:
+        return True
+    else:
+        return False
+
+def conversationsExists(connectionID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    cursor.close()
