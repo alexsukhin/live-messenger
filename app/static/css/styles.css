@@ -1,7 +1,7 @@
 
 @font-face {
   font-family: noahFont;
-  src: url('../files/NoahTextBold.otf')
+  src: url("../files/NoahTextBold.otf")
 }  
 
 body {

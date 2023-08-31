@@ -8,11 +8,12 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(config)
 
-    app.config['MYSQL_HOST'] = MYSQL_HOST
-    app.config['MYSQL_USER'] = MYSQL_USER
-    app.config['MYSQL_PASSWORD'] = MYSQL_PASSWORD
-    app.config['MYSQL_DB'] = MYSQL_DB
-    app.config['SECRET_KEY'] = SECRET_KEY
+
+    app.config["MYSQL_HOST"] = MYSQL_HOST
+    app.config["MYSQL_USER"] = MYSQL_USER
+    app.config["MYSQL_PASSWORD"] = MYSQL_PASSWORD
+    app.config["MYSQL_DB"] = MYSQL_DB
+    app.config["SECRET_KEY"] = SECRET_KEY
 
     try:
         mysql = MySQL(app)
@@ -27,7 +28,7 @@ def create_app():
     app.register_blueprint(auth, url_prefix='/')
 
     login_manager = LoginManager(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = "auth.login"
 
     @login_manager.user_loader
     def loadUser(userID):

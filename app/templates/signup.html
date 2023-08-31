@@ -16,15 +16,13 @@
     }
 </style>
 
-
-
 <div class="container" style="margin-top: 100px;">
     <div class="card mx-auto" style="width: 300px">
-        <img class="card-img-top" src="{{ url_for('static', filename='files/bluebox.png') }}">
+        <img class="card-img-top" src="{{ url_for("static", filename="files/bluebox.png") }}">
 
         <div class="overlay-header">
             <h2>Live Messenger</h2>
-            <p><p>
+            <p></p>
             <h2>Signup</h2>
         </div>
 
@@ -57,11 +55,9 @@
         </div>
     </div>
 
-    <p><p>
-    <p class="text-center">Have an account?<p>
-    <a class="nav-item nav-link" id="login" href="/login" style="color: #097c9c"><center>LOG IN NOW</center><a>
+    <p></p>
+    <p class="text-center">Have an account?</p>
+    <a class="nav-item nav-link" id="login" href="/login" style="color: #097c9c"><center>LOG IN NOW</center></a>
 </div>
-
-
 
 {% endblock %}

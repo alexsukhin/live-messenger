@@ -1,28 +1,24 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset = "utf-8">
-        <meta name = "viewport" content = "width=device-width, initial-scale=1">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
         <title>{% block title %}base{% endblock %}</title>
-
-
     </head>
-
  
     <body>
-
         <div class="alerts-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000;">
         {% for category, message in get_flashed_messages(with_categories=true) %}
-            {% if category == 'error' %}
+            {% if category == "error" %}
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>    
             </div>
-                {% else %}
+            {% else %}
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -32,8 +28,7 @@
         {% endfor %}
         </div>
 
-
-        <div class = "container">
+        <div class="container">
             {% block content %}
             {% endblock %}
         </div>

@@ -5,17 +5,15 @@ from . import mysql
 from .queries import getUser, insertUser
 from .models import User
 
-auth = Blueprint('auth', __name__)
+auth = Blueprint("auth", __name__)
 
-#fix bug - user can log into another account even if in an account
-
-@auth.route('/')
+@auth.route("/")
 def default():
-    return redirect('/login')
+    return redirect("/login")
 
-@auth.route('/signup', methods=['GET', 'POST'])
+@auth.route("/signup", methods=["GET", "POST"])
 def sign_up():
-    if request.method == 'POST':
+    if request.method == "POST":
         firstName = request.form.get("firstName")
         lastName = request.form.get("lastName")
         username = request.form.get("username")
@@ -23,9 +21,7 @@ def sign_up():
 
         existingUser = getUser(username)
 
-        #make these validations better for character limits
-
-        if existingUser:    
+        if existingUser:
             flash("Username already exists", category="error")
         elif len(firstName) > 25:
             flash("First name must be 25 characters or less.", category="error")
@@ -36,22 +32,21 @@ def sign_up():
         elif len(password) > 50:
             flash("Password must be 50 characters or less.", category="error")
         else:
-            insertUser(username, password, firstName, lastName, 'test')
+            insertUser(username, password, firstName, lastName, "test")
             newUser = getUser(username)
 
             if newUser:
                 objUser = User(*newUser)
                 login_user(objUser)
                 flash("Account created!", category="success")
-                return redirect('/dashboard')
+                return redirect("/dashboard")
             else:
                 flash("Error creating account.", category="error")
 
     return render_template("signup.html", user=current_user)
-    
 
-@auth.route('/login', methods=['GET', 'POST'])
-def login():    
+@auth.route("/login", methods=["GET", "POST"])
+def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
@@ -67,12 +62,12 @@ def login():
             objUser = User(*user)
             login_user(objUser)
             flash("Logged in successfully!", category="success")
-            return redirect('/dashboard')
+            return redirect("/dashboard")
 
     return render_template("login.html", user=current_user)
 
-@auth.route('/logout')
+@auth.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect('/login')
+    return redirect("/login")
