@@ -28,13 +28,26 @@ def dashboard():
                     insertConnection(senderID, recipientID)
                     flash("Successfully added user!", category="success")
 
+        """
+        pretty sure i dont need these
+
         elif "message" in request.form:
-            message = request.form.get("message")
+            message = session.get("encryptedMessage")
             senderID = current_user.id
             recipientID = session.get("recipientID")
 
-            #work out how to get sessionid here - may have to change database table
-            #in the future i will need to get encryptedmessage from javascript file. senderid and recipientid will stay same
+            connectionID = getConnectionID(senderID, recipientID)
+            conversationID = getConversationID(connectionID)
+            sessionID = getLatestSessionID(conversationID)
+
+            IV = 'test'
+            dataFormat = 'test'
+
+            insertMessage(sessionID, senderID, recipientID, message, IV, dataFormat)  
+            return jsonify({"message": "Message successfully inserted"})
+        """
+
+    
 
     return render_template("dashboard.html", user=current_user)
 
@@ -93,11 +106,11 @@ def get_chat_users():
     return jsonify(chatUsers)
 
 
-@views.route("/get-chat-messages")
+@views.route("/get-chat-messages/<recipientID>")
 @login_required
-def get_chat_messages():
-    pass
-
+def get_chat_messages(recipientID):
+    messages = getChatMessages(current_user.id, recipientID)
+    return jsonify(messages)
 
 @views.route("/check-conversation/<connectionID>")
 @login_required
@@ -108,10 +121,10 @@ def check_conversation(connectionID):
         return jsonify(False)
 
 
-@views.route("/get-connection-id/<senderID>/<recipientID>")
+@views.route("/get-connection-id/<recipientID>")
 @login_required
-def get_connection_id(senderID, recipientID):
-    connectionID = getConnectionID(senderID, recipientID)
+def get_connection_id(recipientID):
+    connectionID = getConnectionID(current_user.id, recipientID)
     return jsonify(connectionID)
 
 
@@ -128,11 +141,17 @@ def insert_conversation(connectionID):
     insertConversation(connectionID)
     return jsonify({"message": "Conversation inserted successfully"})
 
-@views.route("/insert-session/<conversationID>/<encryptedAESKey>/<socketID>/<senderID>")
+@views.route("/insert-session/<conversationID>/<encryptedAESKey>/<socketID>")
 @login_required
-def insert_session(conversationID, encryptedAESKey, socketID, senderID):
-    insertSession(conversationID, encryptedAESKey, socketID, senderID)
+def insert_session(conversationID, encryptedAESKey, socketID):
+    insertSession(conversationID, encryptedAESKey, socketID)
     return jsonify({"message": "Session inserted successfully"})
+
+@views.route("/insert-message/<sessionID>/<recipientID>/<encryptedContent>/<IV>/<dataFormat>")
+@login_required
+def insert_message(sessionID, recipientID, encryptedContent, IV, dataFormat):
+    insertMessage(sessionID, current_user.id, recipientID, encryptedContent, IV, dataFormat)
+    return jsonify({"message": "Message inserted successfully"})
 
 @views.route("/update-conversation/<conversationID>")
 @login_required
@@ -146,9 +165,25 @@ def get_id():
     id = current_user.id
     return jsonify(id)
 
+@views.route("/get-latest-session-id/<conversationID>")
+@login_required
+def get_latest_session_id(conversationID):
+    sessionID = getLatestSessionID(conversationID)
+    return jsonify(sessionID)
+
+
+"""
+pretty sure i dont need these
+
 @views.route("/send-recipient-id/<recipientID>", methods=["POST"])
 @login_required
 def send_recipient_id(recipientID):
     session["recipientID"] = recipientID
     return jsonify({"message": "Recipient ID sent successfully"})
 
+@views.route("/send-encrypted-message/<encryptedMessage>", methods=["POST"])
+@login_required
+def send_message(encryptedMessage):
+    session["encryptedMessage"] = encryptedMessage
+    return jsonify({"message": "Encrypted message sent successfully"})
+"""

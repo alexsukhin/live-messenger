@@ -42,12 +42,12 @@ def insertConversation(connectionID):
     conn.commit()
     cursor.close()
 
-def insertSession(conversationID, encryptedAESKey, socketID, senderID):
+def insertSession(conversationID, encryptedAESKey, socketID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO sessions (ConversationID, EncryptedAESKey, SocketID, SenderID) VALUES (%s, %s, %s, %s);"
-    values = (conversationID, encryptedAESKey, socketID, senderID,)
+    sql = "INSERT INTO sessions (ConversationID, EncryptedAESKey, SocketID) VALUES (%s, %s, %s);"
+    values = (conversationID, encryptedAESKey, socketID,)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -163,7 +163,7 @@ def getChatMessages(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql="""SELECT * FROM messages
+    sql="""SELECT SenderID, EncryptedContent FROM messages
     WHERE (SenderID = %s AND RecipientID = %s)
     OR (SenderID = %s AND RecipientID = %s)
     ORDER BY Timestamp ASC;"""
@@ -172,7 +172,17 @@ def getChatMessages(senderID, recipientID):
 
     cursor.close()
 
-    return messages
+    messagesList = []
+
+    for message in messages:
+        messageDict = {
+            "senderID": message[0],
+            "encryptedContent": message[1]
+        }
+        
+        messagesList.append(messageDict)
+
+    return messagesList
 
 def connectionExists(senderID, recipientID):
     conn = mysql.connection
@@ -231,3 +241,19 @@ def getConversationID(connectionID):
     cursor.close()  
 
     return conversationID
+
+def getLatestSessionID(conversationID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT SessionID
+    FROM sessions
+    WHERE ConversationID = %s
+    ORDER BY SessionID DESC
+    LIMIT 1;"""
+    cursor.execute(sql, (conversationID,))
+    sessionID = cursor.fetchone()
+
+    cursor.close()
+
+    return sessionID    

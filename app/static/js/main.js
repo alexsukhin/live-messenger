@@ -1,3 +1,22 @@
+
+async function getConnectionID(recipientID) {
+    const connectionResponse = await fetch(`/get-connection-id/${recipientID}`);
+    const connectionData = await connectionResponse.json();
+    return connectionData[0];
+}
+
+async function getConversationID(connectionID) {
+    const conversationResponse = await fetch(`/get-conversation-id/${connectionID}`);
+    const conversationData = await conversationResponse.json();
+    return conversationData[0];
+}
+
+async function getSessionID(conversationID) {
+    const sessionResponse = await fetch(`/get-latest-session-id/${conversationID}`)
+    const sessionData = await sessionResponse.json()
+    return sessionData[0]
+}
+
 let chatUserElements = [];
 
 async function updateChatList() {
@@ -60,23 +79,15 @@ async function updateChatList() {
 
 }
 
-async function updateUser(senderID, recipientID) {
+async function updateUser(recipientID) {
     // Inserts into conversation, session databases
 
     const encryptedAESKey = "test";
     const socketID = "test";
 
-    async function getConversationID(connectionID) {
-        const conversationResponse = await fetch(`/get-conversation-id/${connectionID}`);
-        const conversationData = await conversationResponse.json();
-        return conversationData[0];
-    }
+    const connectionID = await getConnectionID(recipientID);
 
-    const connectionResponse = await fetch(`/get-connection-id/${senderID}/${recipientID}`);
-    const connectionData = await connectionResponse.json();
-    const connectionID = connectionData[0]
-
-    if (connectionData.connectionID !== null) {
+    if (connectionID !== null) {
 
         const conversationCheckResponse = await fetch(`/check-conversation/${connectionID}`);
         const conversationCheckData = await conversationCheckResponse.json();
@@ -91,7 +102,7 @@ async function updateUser(senderID, recipientID) {
 
             const conversationID = await getConversationID(connectionID)
 
-            const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}/${socketID}/${senderID}`);
+            const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}/${socketID}`);
             const insertSessionData = await insertSessionResponse.json();
             
     
@@ -106,7 +117,7 @@ async function updateUser(senderID, recipientID) {
 
             console.log("Update Data:", updateConversationData)
 
-            const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}/${socketID}/${senderID}`);
+            const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}/${socketID}`);
             const insertSessionData = await insertSessionResponse.json();
 
             console.log("Session Data:", insertSessionData);
@@ -128,17 +139,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const clickedUser = event.target.closest(".chat-user");
 
-        const idResponse = await fetch(`/get-sender-id`);
-        const senderID = await idResponse.json();
-
         const recipientID = clickedUser.dataset.userId;
-        console.log(recipientID)
-        //chatbox.dataset.recipientId = recipientID; - use if i need this later
+        chatbox.dataset.recipientId = recipientID;
 
         //Sends recipientID directly into views.py
-        await fetch(`/send-recipient-id/${recipientID}`, {method: "POST"});
+        //await fetch(`/send-recipient-id/${recipientID}`, {method: "POST"});
 
-        await updateUser(senderID, recipientID)
+        await updateUser(recipientID);
         
         await updateChatList();
         
@@ -151,14 +158,73 @@ document.addEventListener("DOMContentLoaded", () => {
     
         introduction.style.display = "none";
         chatbox.style.display = "block";
+
+
+        const idResponse = await fetch(`get-sender-id`);
+        const senderID = await idResponse.json();
+ 
+        const chatMessages = document.getElementById("chatbox-messages");
+        chatMessages.innerHTML = ""
+
+        const response = await fetch(`/get-chat-messages/${recipientID}`);
+        const data = await response.json();
+
+        data.forEach(message => {
+
+            console.log(message.recipientID)
+            console.log(recipientID)
+
+            if (message.senderID == senderID) {
+                senderMessage = document.createElement("div");
+                senderMessage.className = "sender-message";
+                senderMessage.textContent = message.encryptedContent;
+                chatMessages.appendChild(senderMessage);
+            }
+
+            else if (message.senderID == recipientID) {
+                recipientMessage = document.createElement("div");
+                recipientMessage.className = "recipient-message";
+                recipientMessage.textContent = message.encryptedContent;
+                chatMessages.appendChild(recipientMessage);
+            }
+        });
+
     
     });
     
-    document.querySelector("#add-user-button").addEventListener("click", () => {
+    document.getElementById("add-user-button").addEventListener("click", () => {
         updateChatList();
     });
 
     
     updateChatList();
+
+});
+
+
+//inserting message through form
+document.getElementById("message-form").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const chatbox = document.getElementById("chatbox-user");
+    const messageInput = document.getElementById("message");
+    const encryptedContent = messageInput.value;
+
+    const recipientID = chatbox.dataset.recipientId;
+
+    const connectionID = await getConnectionID(recipientID);
+    const conversationID = await getConversationID(connectionID);
+    const sessionID = await getSessionID(conversationID);
+
+    const IV = "test"
+    const dataFormat = "text"
+
+    const insertMessageResponse = await fetch(`/insert-message/${sessionID}/${recipientID}/${encryptedContent}/${IV}/${dataFormat}`);
+    const insertMessageData = await insertMessageResponse.json();
+
+    console.log("Message Data:", insertMessageData)
+
+    messageInput.value = "";
+
 
 });
