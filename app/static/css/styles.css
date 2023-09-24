@@ -52,6 +52,7 @@ body {
   margin-bottom: 10px;
   padding: 5px;
   border-radius: 5px;
+  word-wrap: break-word;
 }
 
 .recipient-message {
@@ -63,4 +64,5 @@ body {
   margin-bottom: 10px;
   padding: 5px;
   border-radius: 5px;
+  word-wrap: break-word;
 }

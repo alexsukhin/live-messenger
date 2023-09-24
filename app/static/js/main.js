@@ -189,8 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 chatMessages.appendChild(recipientMessage);
             }
         });
-
-
     
     });
     
