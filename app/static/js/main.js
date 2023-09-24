@@ -159,7 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
         introduction.style.display = "none";
         chatbox.style.display = "block";
 
-
         const idResponse = await fetch(`get-sender-id`);
         const senderID = await idResponse.json();
  
@@ -169,6 +168,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const response = await fetch(`/get-chat-messages/${recipientID}`);
         const data = await response.json();
 
+        data.reverse();
+        
         data.forEach(message => {
 
             console.log(message.recipientID)

@@ -1,6 +1,9 @@
 import hashlib
 from . import mysql
 
+
+#Sanitize user inputs - cant write question mark in message for example, injection attacks
+
 #INSERT queries
 
 def insertUser(username, password, firstName, lastName, publicRSAKey):
