@@ -1,4 +1,5 @@
 # .gitignore
 
-config.py
+
 venv/
+config.py

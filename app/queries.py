@@ -2,27 +2,28 @@ import hashlib
 from . import mysql
 
 
-#Sanitize user inputs - cant write question mark in message for example, injection attacks
+#Sanitize user inputs - cant write question mark in message for example, injection attacks  
 
 #INSERT queries
 
+#Inserts a new user on signup into users database
 def insertUser(username, password, firstName, lastName, publicRSAKey):
-    
-    hashedPassword = hashlib.sha256(password.encode()).hexdigest()
-
     conn = mysql.connection
     cursor = conn.cursor()
 
     sql = "INSERT INTO users (Username, HashedPassword, FirstName, LastName, PublicRSAKey) VALUES (%s, %s, %s, %s, %s);"
-    values = (username, hashedPassword, firstName, lastName, publicRSAKey,)
+    values = (username, password, firstName, lastName, publicRSAKey,)
     cursor.execute(sql, values)
 
     conn.commit()
     cursor.close()  
 
+#Inserts a new connection when user adds another user into connections database
 def insertConnection(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
+
+    #Inserts two connections into database for both permutations
 
     sql = "INSERT INTO connections (SenderID, RecipientID) VALUES (%s, %s);"
     values = (senderID, recipientID)
@@ -35,16 +36,19 @@ def insertConnection(senderID, recipientID):
     conn.commit()
     cursor.close()
 
-def insertConversation(connectionID):
+#Inserts a new message into messages database
+def insertMessage(sessionID, senderID, recipientID, encryptedContent, IV, dataFormat):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO conversations (ConnectionID) VALUES (%s);"
-    cursor.execute(sql, (connectionID,))
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, IV, DataFormat) VALUES (%s, %s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, encryptedContent, IV, dataFormat,)
+    cursor.execute(sql, values)
 
     conn.commit()
-    cursor.close()
+    cursor.close() 
 
+#Inserts a new session when user opens a chat session into sessions database
 def insertSession(conversationID, encryptedAESKey, socketID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -56,31 +60,20 @@ def insertSession(conversationID, encryptedAESKey, socketID):
     conn.commit()
     cursor.close()
 
-def insertMessage(sessionID, senderID, recipientID, encryptedContent, IV, dataFormat):
+#Inserts a new conversation when user opens a chat session for the first time into conversations database
+def insertConversation(connectionID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, IV, DataFormat) VALUES (%s, %s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, encryptedContent, IV, dataFormat,)
-    cursor.execute(sql, values)
-
-    conn.commit()
-    cursor.close()  
-
-
-#UPDATE queries
-
-def updateName(userID, firstName, lastName):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = "UPDATE users SET FirstName = %s, LastName = %s WHERE UserID = %s;"
-    values = (firstName, lastName, userID)
-    cursor.execute(sql, values)
+    sql = "INSERT INTO conversations (ConnectionID) VALUES (%s);"
+    cursor.execute(sql, (connectionID,))
 
     conn.commit()
     cursor.close()
 
+#UPDATE queries
+
+#Updates user's username from profile page
 def updateUsername(userID, newUsername):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -92,6 +85,19 @@ def updateUsername(userID, newUsername):
     conn.commit()
     cursor.close()
 
+#Updates user's name from profile page
+def updateName(userID, firstName, lastName):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET FirstName = %s, LastName = %s WHERE UserID = %s;"
+    values = (firstName, lastName, userID)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
+#Updates user's password from profile page
 def updatePassword(userID, password):
 
     hashedPassword = hashlib.sha256(password.encode()).hexdigest()
@@ -106,6 +112,7 @@ def updatePassword(userID, password):
     conn.commit()
     cursor.close()
 
+#Updates the timestamp in conversations database
 def updateConversation(conversationID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -119,6 +126,7 @@ def updateConversation(conversationID):
 
 #SELECT queries
 
+#Checks if a user exists
 def getUser(username):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -130,6 +138,116 @@ def getUser(username):
     cursor.close()
     return user
 
+#Checks if user already has a connection with another user
+def connectionExists(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT COUNT(*) FROM connections
+    WHERE (SenderID = %s AND RecipientID = %s);"""
+    cursor.execute(sql, (senderID, recipientID,))
+    connection = cursor.fetchone()
+
+    cursor.close()
+
+    #If query returns a result greater than zero, there is a connection between two users
+    if connection[0] > 0:
+        return True
+    else:
+        return False
+
+#Checks if a user already has a conversation with another user
+def conversationExists(connectionID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT COUNT(*) from conversations
+    WHERE ConnectionID = %s;"""
+    cursor.execute(sql, (connectionID,))
+    conversation = cursor.fetchone()
+
+    cursor.close()
+
+    #If query returns a result greater than zero, there is a conversation between two users
+    if conversation[0] > 0:
+        return True
+    else:
+        return False
+
+#Getting the connection ID between two users
+def getConnectionID(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT ConnectionID FROM connections
+    WHERE (SenderID = %s AND RecipientID = %s);"""
+    cursor.execute(sql, (senderID, recipientID,))
+    connectionID = cursor.fetchone()
+
+    cursor.close()
+
+    return connectionID
+
+#Getting the conversation ID between two users
+def getConversationID(connectionID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT ConversationID FROM conversations
+    WHERE ConnectionID = %s;"""
+    cursor.execute(sql, (connectionID,))
+    conversationID = cursor.fetchone()
+
+    cursor.close()  
+
+    return conversationID
+
+#Getting the latest session ID between two users
+def getLatestSessionID(conversationID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT SessionID
+    FROM sessions
+    WHERE ConversationID = %s
+    ORDER BY SessionID DESC
+    LIMIT 1;"""
+    cursor.execute(sql, (conversationID,))
+    sessionID = cursor.fetchone()
+
+    cursor.close()
+
+    return sessionID    
+
+#Selects all messages within a conversation to retrieve chat history
+def getChatMessages(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql="""SELECT SenderID, EncryptedContent FROM messages
+    WHERE (SenderID = %s AND RecipientID = %s)
+    OR (SenderID = %s AND RecipientID = %s)
+    ORDER BY Timestamp ASC;"""
+    cursor.execute(sql, (senderID, recipientID, recipientID, senderID))
+    messages = cursor.fetchall()
+
+    cursor.close()
+
+
+    messagesList = []
+
+    #Appends invidual messages each in a dictionary format into a list
+    for message in messages:
+        messageDict = {
+            "senderID": message[0],
+            "encryptedContent": message[1]
+        }
+        
+        messagesList.append(messageDict)
+
+    return messagesList
+
+#Gets chat users for chat list in dashboard
 def getChatUsers(userID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -147,6 +265,7 @@ def getChatUsers(userID):
     
     chatUsersList = []
 
+    #Appends invidual users each in a dictionary format into a list
     for user in chatUsers:
         chatUsersDict = {
             "userID": user[0],
@@ -161,102 +280,3 @@ def getChatUsers(userID):
 
 
     return chatUsersList
-
-def getChatMessages(senderID, recipientID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql="""SELECT SenderID, EncryptedContent FROM messages
-    WHERE (SenderID = %s AND RecipientID = %s)
-    OR (SenderID = %s AND RecipientID = %s)
-    ORDER BY Timestamp ASC;"""
-    cursor.execute(sql, (senderID, recipientID, recipientID, senderID))
-    messages = cursor.fetchall()
-
-    cursor.close()
-
-    messagesList = []
-
-    for message in messages:
-        messageDict = {
-            "senderID": message[0],
-            "encryptedContent": message[1]
-        }
-        
-        messagesList.append(messageDict)
-
-    return messagesList
-
-def connectionExists(senderID, recipientID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """SELECT COUNT(*) FROM connections
-    WHERE (SenderID = %s AND RecipientID = %s);"""
-    cursor.execute(sql, (senderID, recipientID,))
-    connection = cursor.fetchone()
-
-    cursor.close()
-
-    if connection[0] > 0:
-        return True
-    else:
-        return False
-
-def getConnectionID(senderID, recipientID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """SELECT ConnectionID FROM connections
-    WHERE (SenderID = %s AND RecipientID = %s);"""
-    cursor.execute(sql, (senderID, recipientID,))
-    connectionID = cursor.fetchone()
-
-    cursor.close()
-
-    return connectionID
-
-def conversationExists(connectionID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """SELECT COUNT(*) from conversations
-    WHERE ConnectionID = %s;"""
-    cursor.execute(sql, (connectionID,))
-    conversation = cursor.fetchone()
-
-    cursor.close()
-
-    if conversation[0] > 0:
-        return True
-    else:
-        return False
-
-def getConversationID(connectionID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """SELECT ConversationID FROM conversations
-    WHERE ConnectionID = %s;"""
-    cursor.execute(sql, (connectionID,))
-    conversationID = cursor.fetchone()
-
-    cursor.close()  
-
-    return conversationID
-
-def getLatestSessionID(conversationID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """SELECT SessionID
-    FROM sessions
-    WHERE ConversationID = %s
-    ORDER BY SessionID DESC
-    LIMIT 1;"""
-    cursor.execute(sql, (conversationID,))
-    sessionID = cursor.fetchone()
-
-    cursor.close()
-
-    return sessionID    

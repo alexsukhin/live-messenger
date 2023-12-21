@@ -7,6 +7,7 @@ from .models import User
 
 auth = Blueprint("auth", __name__)
 
+#If no route is selected, automatically directs user to login page
 @auth.route("/")
 def default():
     return redirect("/login")
@@ -21,6 +22,8 @@ def sign_up():
 
         existingUser = getUser(username)
 
+        #Prerequisite checks for user creating an account
+
         if existingUser:
             flash("Username already exists", category="error")
         elif len(firstName) > 25:
@@ -32,9 +35,15 @@ def sign_up():
         elif len(password) > 50:
             flash("Password must be 50 characters or less.", category="error")
         else:
-            insertUser(username, password, firstName, lastName, "test")
-            newUser = getUser(username)
+            #Hashes password inputted
+            hashedPassword = hashlib.sha256(password.encode()).hexdigest()
 
+            #Inserts user into user database
+            insertUser(username, hashedPassword, firstName, lastName, "test")
+            newUser = getUser(username)
+            
+            #Logs user into account and redirects user to dashboard page
+            #if user is properly inserted into database
             if newUser:
                 objUser = User(*newUser)
                 login_user(objUser)
@@ -51,13 +60,19 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
 
+
+        #Hashes password inputted
         loginHashedPassword = hashlib.sha256(password.encode()).hexdigest()
         user = getUser(username)
 
+        #Prerequisite checks for user logging into their account
+
         if user is None:
             flash("Username not found.", category="error")
+        #Checks if inputted password doesn't equal to passsword stored in user database
         elif loginHashedPassword != user[2]:
             flash("Incorrect password.", category="error")
+        #Logs user into account and redirects user to dashboard page
         else:
             objUser = User(*user)
             login_user(objUser)
