@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_mysqldb import MySQL
 from flask_login import LoginManager
-from flask_socketio import SocketIO
 from .models import User
 from .config import MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, SECRET_KEY
 
@@ -24,22 +23,12 @@ except Exception as e:
     # Add better error handling here
 
 
-#Websockets
 
-socketio = SocketIO(app, async_mode="threading")
-
-@socketio.on('connect')
-def handle_connect():
-    # Handle a new WebSocket connection
-    pass
-
-@socketio.on('message')
-def handle_message(message):
-    # Handle incoming messages from clients
-    pass
-
+from .socket import socketio
 from .views import views
 from .auth import auth
+
+socketio.init_app(app, async_mode="threading")
 
 app.register_blueprint(views, url_prefix='/')
 app.register_blueprint(auth, url_prefix='/')
