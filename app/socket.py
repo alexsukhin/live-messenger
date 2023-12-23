@@ -4,6 +4,14 @@ from .queries import insertMessage
 
 socketio = SocketIO()
 
+def room_exists(room_name):
+    rooms_dict = socketio.server.manager.rooms
+
+    if room_name in rooms_dict['/']:
+        return True
+    else:
+        return False
+
 @socketio.on('connect')
 def handle_connect():
     room_id = f"room_{current_user.id}"
@@ -19,11 +27,13 @@ def handle_message(sessionID, recipientID, encryptedContent, IV, dataFormat):
 
     message = {
         "senderID": senderID,
+        "recipientID": recipientID,
         "encryptedContent": encryptedContent
-        }   
+        }
 
     #Emits message to javascript client to push messages in real time
+    if room_exists(f"room_{senderID}"):
+        socketio.emit('message', message, room=f"room_{senderID}")
 
-    socketio.emit('message', message, room=f"room_{senderID}")
-    
-    socketio.emit('message', message, room=f"room_{recipientID}")
+    if room_exists(f"room_{recipientID}"):
+        socketio.emit('message', message, room=f"room_{recipientID}")

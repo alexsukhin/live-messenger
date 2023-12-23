@@ -33,29 +33,7 @@ def dashboard():
                     insertConnection(senderID, recipientID)
                     flash("Successfully added user!", category="success")
 
-        """
-        pretty sure i dont need these
-
-        elif "message" in request.form:
-            message = session.get("encryptedMessage")
-            senderID = current_user.id
-            recipientID = session.get("recipientID")
-
-            connectionID = getConnectionID(senderID, recipientID)
-            conversationID = getConversationID(connectionID)
-            sessionID = getLatestSessionID(conversationID)
-
-            IV = 'test'
-            dataFormat = 'test'
-
-            insertMessage(sessionID, senderID, recipientID, message, IV, dataFormat)  
-            return jsonify({"message": "Message successfully inserted"})
-        """
-
-    
-
     return render_template("dashboard.html", user=current_user)
-
 
 @views.route("/profile", methods=["GET", "POST"])
 @login_required
@@ -193,21 +171,3 @@ def get_chat_messages(recipientID):
 def get_chat_users():
     chatUsers = getChatUsers(current_user.id)
     return jsonify(chatUsers)
-
-
-
-"""
-pretty sure i dont need these
-
-@views.route("/send-recipient-id/<recipientID>", methods=["POST"])
-@login_required
-def send_recipient_id(recipientID):
-    session["recipientID"] = recipientID
-    return jsonify({"message": "Recipient ID sent successfully"})
-
-@views.route("/send-encrypted-message/<encryptedMessage>", methods=["POST"])
-@login_required
-def send_message(encryptedMessage):
-    session["encryptedMessage"] = encryptedMessage
-    return jsonify({"message": "Encrypted message sent successfully"})
-"""

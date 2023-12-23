@@ -121,7 +121,7 @@ async function initiateSession(conversationID, encryptedAESKey, socketID) {
             }
         }
 
-        else if (message.senderID == recipientID) {
+        else if (message.recipientID == senderID) {
             recipientMessage = document.createElement("div");
             recipientMessage.className = "recipient-message";
             recipientMessage.textContent = message.encryptedContent;
@@ -236,6 +236,13 @@ document.addEventListener("DOMContentLoaded", () => {
         await updateUser(recipientID);
         
         await updateChatList();
+
+
+        //Resets colour when selecting a different user
+        const chatUsers = chatList.querySelectorAll(".chat-user");
+        chatUsers.forEach(user => {
+            user.style.backgroundColor = "";
+        });
     
         clickedUser.style.backgroundColor = "#dde4e4";
     

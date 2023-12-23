@@ -39,6 +39,7 @@ login_manager.login_view = "auth.login"
 #Loads user from database into User object
 @login_manager.user_loader
 def loadUser(userID):
+
     conn = mysql.connection
     cursor = conn.cursor()
 
