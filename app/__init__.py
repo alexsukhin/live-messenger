@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_mysqldb import MySQL
 from flask_login import LoginManager
-from .models import User
+from .users import User
 from .config import MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB, SECRET_KEY
 
 app = Flask(__name__)
@@ -21,7 +21,6 @@ try:
 except Exception as e:
     print("Error connecting to the database:", e)
     # Add better error handling here
-
 
 
 from .socket import socketio

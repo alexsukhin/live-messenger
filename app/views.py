@@ -100,10 +100,10 @@ def insert_message(sessionID, recipientID, encryptedContent, IV, dataFormat):
     return jsonify({"message": "Message inserted successfully"})
 
 #HTML route for inserting a new session into sessions database
-@views.route("/insert-session/<conversationID>/<encryptedAESKey>/<socketID>")
+@views.route("/insert-session/<conversationID>/<encryptedAESKey>")
 @login_required
-def insert_session(conversationID, encryptedAESKey, socketID):
-    insertSession(conversationID, encryptedAESKey, socketID)
+def insert_session(conversationID, encryptedAESKey):
+    insertSession(conversationID, encryptedAESKey)
     return jsonify({"message": "Session inserted successfully"})
 
 #HTML route for inserting a new conversation into conversations database

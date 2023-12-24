@@ -37,24 +37,38 @@ def insertConnection(senderID, recipientID):
     cursor.close()
 
 #Inserts a new message into messages database
-def insertMessage(sessionID, senderID, recipientID, encryptedContent, IV, dataFormat):
+def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, IV, DataFormat) VALUES (%s, %s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, encryptedContent, IV, dataFormat,)
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, DataFormat) VALUES (%s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, encryptedContent, dataFormat)
     cursor.execute(sql, values)
 
     conn.commit()
     cursor.close() 
 
-#Inserts a new session when user opens a chat session into sessions database
-def insertSession(conversationID, encryptedAESKey, socketID):
+#Inserts a new file into messages database
+def insertFile(sessionID, senderID, recipientID, filePath, fileName, dataFormat, IV):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO sessions (ConversationID, EncryptedAESKey, SocketID) VALUES (%s, %s, %s);"
-    values = (conversationID, encryptedAESKey, socketID,)
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, FilePath, FileName, DataFormat, IV) VALUES (%s, %s, %s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, filePath, fileName, dataFormat, IV)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close() 
+
+    
+
+#Inserts a new session when user opens a chat session into sessions database
+def insertSession(conversationID, encryptedAESKey):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "INSERT INTO sessions (ConversationID, EncryptedAESKey) VALUES (%s, %s);"
+    values = (conversationID, encryptedAESKey,)
     cursor.execute(sql, values)
 
     conn.commit()

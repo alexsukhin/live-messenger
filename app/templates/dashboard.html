@@ -35,8 +35,6 @@
                 Add User
             </button>
         </div>
-        
-
         <div class="col-9 flex">
         </div>
     </div>
@@ -51,16 +49,21 @@
             <div class="bluebackground" id="introduction" style="height: 650px;">
                     <h3 style="line-height: 175px; font-size: 70px;">Live Messenger<h3>
                     <h3 style="font-size: 30px;">Select a user to start messaging<h3>
-            </div>
+            </div>  
             <div class="chatbox" id="chatbox-user" style="display: none;">
                 <div class="greybackground" id="chatbox-messages" style="padding-top: 10px; height: 568.75px; overflow-y: auto; display: flex; flex-direction: column-reverse;">
                 </div>
+
                 <div class="bluebackground" style="height: 81.25px;">
-                    <form id="message-form" method="POST">
-                        <div class="mb-3">
-                            <div style="width: 92.5%; margin: auto; padding-top: 20.3125px">
-                                <input type="text" id="message" name="message" class="form-control" placeholder="Enter message">
-                            </div>
+                    <div id="file-upload">
+                        <input type="file" id="file-input" style="display: none;" />
+                        <label for="file-input" type="button" class="p-2 btn white" style="float: left; width: 5%; margin-top: 4.5px; margin-left: 10px; font-size: 35px;">
+                            +
+                        </label>
+                    </div>
+                    <form id="message-form">
+                        <div style="width: 90%; margin-left: 70px; padding-top: 20.125px">
+                            <input type="text" id="message" name="message" class="form-control" placeholder="Enter message">
                         </div>
                     </form>
                 </div>
@@ -68,6 +71,14 @@
         </div>
     </div>
 </div>
+
+<!-- 
+
+                            <button type="button" class="p-2 btn white" style="float: left; width: 5%; margin-top: 4.5px; margin-left: 10px; font-size: 35px;">
+                            +
+                        </button>
+    
+-->
 
 <!-- modals -->
 

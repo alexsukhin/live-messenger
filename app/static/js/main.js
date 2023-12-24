@@ -84,8 +84,8 @@ async function updateChatList() {
 
 }
 
-async function initiateSession(conversationID, encryptedAESKey, socketID) {
-    const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}/${socketID}`);
+async function initiateSession(conversationID, encryptedAESKey) {
+    const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}`);
     const insertSessionData = await insertSessionResponse.json();
     console.log("Session Data:", insertSessionData);
 
@@ -151,7 +151,6 @@ async function updateUser(recipientID) {
     }
 
     const encryptedAESKey = "test";
-    const socketID = "test";
 
     const connectionID = await getConnectionID(recipientID);
 
@@ -174,7 +173,7 @@ async function updateUser(recipientID) {
             const conversationID = await getConversationID(connectionID)
 
             //Inserts a session into database and establishes websocket
-            initiateSession(conversationID, encryptedAESKey, socketID);
+            initiateSession(conversationID, encryptedAESKey);
 
 
         } else {
@@ -187,7 +186,7 @@ async function updateUser(recipientID) {
             console.log("Update Data:", updateConversationData)
             
             //Inserts a session into database and establishes websocket
-            initiateSession(conversationID, encryptedAESKey, socketID)
+            initiateSession(conversationID, encryptedAESKey)
 
 
         }
@@ -209,16 +208,47 @@ document.getElementById("message-form").addEventListener("submit", async event =
     const conversationID = await getConversationID(connectionID);
     const sessionID = await getSessionID(conversationID);
 
-    const IV = "test"
-    const dataFormat = "text"
+    const dataFormat = "text/plain"
 
     messageInput.value = "";
 
     //Emits message to flask server
-    sessionSocket.emit('message', sessionID, recipientID, encryptedContent, IV, dataFormat);
+    sessionSocket.emit('message', sessionID, recipientID, encryptedContent, dataFormat);
 
 
 });
+
+document.getElementById("file-upload").addEventListener("change", async event => {
+    event.preventDefault()
+
+    const chatbox = document.getElementById("chatbox-user");
+    const fileInput = document.getElementById("file-input");
+    const file = fileInput.files[0];
+    const fileName = file.name
+
+    console.log(file)
+
+    const recipientID = chatbox.dataset.recipientId;
+
+    const connectionID = await getConnectionID(recipientID);
+    const conversationID = await getConversationID(connectionID);
+    const sessionID = await getSessionID(conversationID);
+
+    const IV = "test"
+    dataFormat = file.type;
+
+    const reader = new FileReader();
+
+    reader.onload = (data) => {
+        const fileData = data.target.result
+
+        sessionSocket.emit('file', sessionID, recipientID, fileData, fileName, dataFormat, IV);
+    }
+
+    reader.readAsArrayBuffer(file);
+
+});
+
 
 document.addEventListener("DOMContentLoaded", () => {
 

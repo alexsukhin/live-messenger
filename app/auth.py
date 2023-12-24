@@ -3,7 +3,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 import hashlib
 from . import mysql
 from .queries import getUser, insertUser
-from .models import User
+from .users import User
 
 auth = Blueprint("auth", __name__)
 
