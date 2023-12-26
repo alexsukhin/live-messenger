@@ -2,6 +2,7 @@ from flask import Blueprint, redirect, render_template, request, flash, jsonify,
 from flask_login import login_required, current_user
 from .queries import *
 import hashlib
+import base64
 
 views = Blueprint("views", __name__)
 
@@ -163,6 +164,18 @@ def get_conversation_id(connectionID):
 @login_required
 def get_chat_messages(recipientID):
     messages = getChatMessages(current_user.id, recipientID)
+    
+    for message in messages:
+        if message["dataFormat"] != "text/short":
+            #read file and write to encryptedContent in message
+            with open(message["filePath"], "rb") as file:
+                encryptedContent = file.read()
+
+                #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
+                base64Data = base64.b64encode(encryptedContent).decode('utf-8')
+                message["encryptedContent"] = base64Data
+
+
     return jsonify(messages)
 
 #HTML route for getting chat users for chat list in dashboard

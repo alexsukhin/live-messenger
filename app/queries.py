@@ -46,20 +46,23 @@ def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat
     cursor.execute(sql, values)
 
     conn.commit()
-    cursor.close() 
+    cursor.close()
+
+    return True
 
 #Inserts a new file into messages database
-def insertFile(sessionID, senderID, recipientID, filePath, fileName, dataFormat, IV):
+def insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, FilePath, FileName, DataFormat, IV) VALUES (%s, %s, %s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, filePath, fileName, dataFormat, IV)
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, FilePath, DataFormat, IV) VALUES (%s, %s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, filePath, dataFormat, IV)
     cursor.execute(sql, values)
 
     conn.commit()
-    cursor.close() 
+    cursor.close()
 
+    return True
     
 
 #Inserts a new session when user opens a chat session into sessions database
@@ -238,7 +241,7 @@ def getChatMessages(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql="""SELECT SenderID, EncryptedContent FROM messages
+    sql="""SELECT SenderID, RecipientID, EncryptedContent, FilePath, DataFormat FROM messages
     WHERE (SenderID = %s AND RecipientID = %s)
     OR (SenderID = %s AND RecipientID = %s)
     ORDER BY Timestamp ASC;"""
@@ -254,7 +257,10 @@ def getChatMessages(senderID, recipientID):
     for message in messages:
         messageDict = {
             "senderID": message[0],
-            "encryptedContent": message[1]
+            "recipientID" : message[1],
+            "encryptedContent": message[2],
+            "filePath": message[3],
+            "dataFormat": message[4]
         }
         
         messagesList.append(messageDict)

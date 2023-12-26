@@ -1,88 +1,6 @@
-let chatUserElements = [];
+import {getConnectionID, getSessionID, getConversationID, appendMessage, appendImage, updateChatList} from "./functions.js";
+
 let sessionSocket;
-
-async function getConnectionID(recipientID) {
-    //Gets connection ID and returns as a JSON response
-    const connectionResponse = await fetch(`/get-connection-id/${recipientID}`);
-    const connectionData = await connectionResponse.json();
-    return connectionData[0];
-}
-
-async function getSessionID(conversationID) {
-    //Gets session ID and returns as a JSON response
-    const sessionResponse = await fetch(`/get-latest-session-id/${conversationID}`)
-    const sessionData = await sessionResponse.json()
-    return sessionData[0]
-}
-
-async function getConversationID(connectionID) {
-    //Gets conversation ID and returns as a JSON response
-    const conversationResponse = await fetch(`/get-conversation-id/${connectionID}`);
-    const conversationData = await conversationResponse.json();
-    return conversationData[0];
-}
-
-async function updateChatList() {
-
-    //Gets list of all chat users into data variable via JSON
-    const response = await fetch("/get-chat-users");
-    const data = await response.json();
-
-        //Loops through each chat user
-        data.forEach(user => {
-            let chatUserElement = chatUserElements.find(element => element.dataset.userId === user.userID);
-            
-            //Creates and pushes a chat user element via HTML if there is no pre-existing chat user element for user
-            if (!chatUserElement) {
-                chatUserElement = document.createElement("div");
-                chatUserElement.className = "chat-user";
-                chatUserElement.dataset.userId = user.userID;
-
-                const usernameElement = document.createElement("h");
-                const firstNameElement = document.createElement("h");   
-                const lastNameElement = document.createElement("h");
-                const notificationCounterElement = document.createElement("h2");
-                const spaceElement = document.createTextNode(" ");
-                const br = document.createElement("br");
-                const hr = document.createElement("hr");
-    
-                usernameElement.textContent = user.username;
-                firstNameElement.textContent = user.firstName;
-                lastNameElement.textContent = user.lastName;
-    
-                chatUserElement.appendChild(usernameElement);
-                chatUserElement.appendChild(notificationCounterElement);
-                chatUserElement.appendChild(br);
-                chatUserElement.appendChild(firstNameElement);
-                chatUserElement.appendChild(spaceElement);
-                chatUserElement.appendChild(lastNameElement);
-                chatUserElement.appendChild(hr);
-
-
-                chatUserElements.push(chatUserElement);
-            }
-                
-            if (user.notificationCounter !== 0) {
-                notificationCounterElement.textContent = user.notificationCounter;
-            }
-
-        });
-
-        // Determines the desired order based on the fetched data
-        const desiredOrder = data.map(user => user.userID);
-        const chatList = document.getElementById("chat-list");
-
-        // Reorders chat user elements in chatList based on desired order
-        desiredOrder.forEach(userId => {
-            const chatUserElement = chatUserElements.find(element => element.dataset.userId === userId.toString());
-            if (chatUserElement) {
-                chatList.appendChild(chatUserElement);
-            }
-        });
-
-
-
-}
 
 async function initiateSession(conversationID, encryptedAESKey) {
     const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}`);
@@ -106,36 +24,25 @@ async function initiateSession(conversationID, encryptedAESKey) {
 
         const chatMessages = document.getElementById("chatbox-messages");
 
-        if (message.senderID == senderID) {
-            senderMessage = document.createElement("div");
-            senderMessage.className = "sender-message";
-            senderMessage.textContent = message.encryptedContent;
+        appendMessage(message, senderID, chatMessages)
 
-            //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
-            //Ensures messages are not in reverse-order
-            if (chatMessages.firstChild) {
-                chatMessages.insertBefore(senderMessage, chatMessages.firstChild);
-            }
-            else {
-                chatMessages.appendChild(senderMessage, chatMessages.firstChild);
-            }
-        }
-
-        else if (message.recipientID == senderID) {
-            recipientMessage = document.createElement("div");
-            recipientMessage.className = "recipient-message";
-            recipientMessage.textContent = message.encryptedContent;
-
-            //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
-            //Ensures messages are not in reverse-order
-            if (chatMessages.firstChild) {
-                chatMessages.insertBefore(recipientMessage, chatMessages.firstChild);
-            }
-            else {
-                chatMessages.appendChild(recipientMessage, chatMessages.firstChild);
-            }
-        }
         
+    })
+
+    sessionSocket.on('file', async (file) => {
+        console.log("Received file:", file);
+
+        const idResponse = await fetch(`get-sender-id`);
+        const senderID = await idResponse.json();
+
+        const chatMessages = document.getElementById("chatbox-messages");
+
+        //Images
+       
+        const dataURL = `data:${file.dataFormat};base64,${file.encryptedContent}`
+
+        appendImage(file, senderID, chatMessages, dataURL)
+
     })
 
 
@@ -208,7 +115,7 @@ document.getElementById("message-form").addEventListener("submit", async event =
     const conversationID = await getConversationID(connectionID);
     const sessionID = await getSessionID(conversationID);
 
-    const dataFormat = "text/plain"
+    const dataFormat = "text/short"
 
     messageInput.value = "";
 
@@ -224,7 +131,9 @@ document.getElementById("file-upload").addEventListener("change", async event =>
     const chatbox = document.getElementById("chatbox-user");
     const fileInput = document.getElementById("file-input");
     const file = fileInput.files[0];
-    const fileName = file.name
+    
+    //Splits true file name into two parts e.g. image.png -> ["image", "png"]
+    const fileName = (file.name).split(".")
 
     console.log(file)
 
@@ -235,7 +144,8 @@ document.getElementById("file-upload").addEventListener("change", async event =>
     const sessionID = await getSessionID(conversationID);
 
     const IV = "test"
-    dataFormat = file.type;
+    const dataFormat = file.type;
+    const acceptedFormat = ["text/plain", "application/pdf", "image/png", "image/jpeg"]
 
     const reader = new FileReader();
 
@@ -245,7 +155,13 @@ document.getElementById("file-upload").addEventListener("change", async event =>
         sessionSocket.emit('file', sessionID, recipientID, fileData, fileName, dataFormat, IV);
     }
 
-    reader.readAsArrayBuffer(file);
+    if (acceptedFormat.includes(dataFormat)) {
+        console.log("Accepted")
+        reader.readAsArrayBuffer(file);
+    } else {
+        console.log("Not accepted")
+        //possible gui response
+    }
 
 });
 
@@ -284,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
  
         //Clears previous chat messages in HTML
         const chatMessages = document.getElementById("chatbox-messages");
+
         chatMessages.innerHTML = ""
 
         //Gets list of all chat messages in a data variable via JSON
@@ -291,24 +208,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await response.json();
 
         //decrypt all messages in future
-
-        data.reverse();
         
         //Loops through all messages and pushes it to messages HTML, outputting to user's screen
         data.forEach(message => {
 
-            if (message.senderID == senderID) {
-                senderMessage = document.createElement("div");
-                senderMessage.className = "sender-message";
-                senderMessage.textContent = message.encryptedContent;
-                chatMessages.appendChild(senderMessage);
-            }
+            if (message.dataFormat == "text/short") {
 
-            else if (message.senderID == recipientID) {
-                recipientMessage = document.createElement("div");
-                recipientMessage.className = "recipient-message";
-                recipientMessage.textContent = message.encryptedContent;
-                chatMessages.appendChild(recipientMessage);
+                appendMessage(message, senderID, chatMessages)
+                
+            } else if (message.dataFormat == "text/plain" || message.dataFormat == "application/pdf") {
+                pass
+            } else if (message.dataFormat == "image/png" || message.dataFormat == "image/jpeg") {
+                
+                const dataURL = `data:${message.dataFormat};base64,${message.encryptedContent}`
+
+                appendImage(message, senderID, chatMessages, dataURL)
+
+            } else {
+                console.log("Invalid file type")
             }
         });
     

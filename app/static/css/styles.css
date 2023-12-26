@@ -55,6 +55,22 @@ body {
   word-wrap: break-word;
 }
 
+.sender-file {
+  margin-left: 530px;
+  margin-bottom: 15px;
+  width:100%;
+  max-width:410px;
+}
+
+.recipient-file {
+  margin-left: 15px;
+  margin-bottom: 15px;
+  width:100%;
+  max-width:410px;
+  
+}
+
+
 .recipient-message {
   width: 425px;
   min-height: auto;
