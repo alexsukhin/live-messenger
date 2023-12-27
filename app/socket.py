@@ -46,13 +46,9 @@ def handle_message(sessionID, recipientID, encryptedContent, dataFormat):
 def handle_file(sessionID, recipientID, encryptedContent, fileName, dataFormat, IV):
     senderID = current_user.id
 
-    #try to make this code cleaner - cant use backslashes in f strings
     time = datetime.now()
-    fileName = fileName[0] + " " + str(time.hour) + str(time.minute) + str(time.second) + "." + fileName[1]
+    fileName = str(time.hour) + str(time.minute) + str(time.second) + "%" + str(fileName)
     filePath = "D:\\Live Messenger\\files\\" + fileName
-
-    print(filePath)
-
 
 
     #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
@@ -66,6 +62,7 @@ def handle_file(sessionID, recipientID, encryptedContent, fileName, dataFormat, 
             "senderID": senderID,
             "recipientID": recipientID,
             "encryptedContent": base64Data,
+            "filePath" : filePath,
             "dataFormat": dataFormat,
             "IV": IV
         }
@@ -79,11 +76,8 @@ def handle_file(sessionID, recipientID, encryptedContent, fileName, dataFormat, 
         print("Failed to insert file, possibly too big")
         #fix file size issue
 
-    #TODO: emit back to javascript, output image/file to html depending on its type
-    # after start encryption, lots of time to do this all
-    # tmrw try to finish sending images & files
-
-    #do files (txt and pdf documents)
-    #after - implement encryption, multiple encryptions possibly
-    #update analysis, design, start technical solution after holiday or maybe before if time, doubt it though
-    #have two weeks
+    #do file communication (txt, pdf) - tmrw
+    #allow users to download files - tmrw or day after
+    #implement encryption, possibly multiple encryptions - not sure how long, 3-5 days
+    #update analysis, design
+    #start technical solution after holiday or before if time

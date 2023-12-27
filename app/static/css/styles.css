@@ -9,7 +9,6 @@ body {
   font-family: noahFont;
 }
 
-/*https://stackoverflow.com/questions/58656335/prevent-flash-messages-from-moving-below-container-down*/
 
 .white {
   color: #e9eeee;
@@ -55,21 +54,13 @@ body {
   word-wrap: break-word;
 }
 
+
 .sender-file {
   margin-left: 530px;
   margin-bottom: 15px;
-  width:100%;
+  width: 100%;
   max-width:410px;
 }
-
-.recipient-file {
-  margin-left: 15px;
-  margin-bottom: 15px;
-  width:100%;
-  max-width:410px;
-  
-}
-
 
 .recipient-message {
   width: 425px;
@@ -81,4 +72,11 @@ body {
   padding: 5px;
   border-radius: 5px;
   word-wrap: break-word;
+}
+
+.recipient-file {
+  margin-left: 30px;
+  margin-bottom: 15px;
+  width:100%;
+  max-width:410px;
 }

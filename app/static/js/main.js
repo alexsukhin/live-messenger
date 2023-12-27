@@ -1,4 +1,4 @@
-import {getConnectionID, getSessionID, getConversationID, appendMessage, appendImage, updateChatList} from "./functions.js";
+import {getConnectionID, getSessionID, getConversationID, updateChatList, appendMessage, appendImage, appendFile} from "./functions.js";
 
 let sessionSocket;
 
@@ -36,12 +36,24 @@ async function initiateSession(conversationID, encryptedAESKey) {
         const senderID = await idResponse.json();
 
         const chatMessages = document.getElementById("chatbox-messages");
+        
+            
+        if (file.dataFormat == "text/plain" || file.dataFormat == "application/pdf") {
 
-        //Images
-       
-        const dataURL = `data:${file.dataFormat};base64,${file.encryptedContent}`
+            const decodedText = atob(file.encryptedContent)
 
-        appendImage(file, senderID, chatMessages, dataURL)
+            appendFile(file, senderID, decodedText, chatMessages)
+
+
+        } else if (file.dataFormat == "image/png" || file.dataFormat == "image/jpeg") {
+            
+            const dataURL = `data:${file.dataFormat};base64,${file.encryptedContent}`
+
+            appendImage(file, senderID, dataURL, chatMessages)
+
+        }
+
+        
 
     })
 
@@ -133,9 +145,7 @@ document.getElementById("file-upload").addEventListener("change", async event =>
     const file = fileInput.files[0];
     
     //Splits true file name into two parts e.g. image.png -> ["image", "png"]
-    const fileName = (file.name).split(".")
-
-    console.log(file)
+    const fileName = file.name
 
     const recipientID = chatbox.dataset.recipientId;
 
@@ -217,12 +227,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 appendMessage(message, senderID, chatMessages)
                 
             } else if (message.dataFormat == "text/plain" || message.dataFormat == "application/pdf") {
-                pass
+
+                const decodedText = atob(message.encryptedContent)
+
+                appendFile(message, senderID, decodedText, chatMessages)
+
             } else if (message.dataFormat == "image/png" || message.dataFormat == "image/jpeg") {
                 
                 const dataURL = `data:${message.dataFormat};base64,${message.encryptedContent}`
 
-                appendImage(message, senderID, chatMessages, dataURL)
+                appendImage(message, senderID, dataURL, chatMessages)
 
             } else {
                 console.log("Invalid file type")
