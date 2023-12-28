@@ -140,6 +140,32 @@ def updateConversation(conversationID):
     conn.commit()
     cursor.close()
 
+#Increases notification counter by one when sender sends a message to a recipient
+def incrementNotificationCounter(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """UPDATE connections
+    SET NotificationCounter = NotificationCounter + 1
+    WHERE (SenderID = %s AND RecipientID = %s);"""
+    values = (recipientID, senderID)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
+def resetNotificationCounter(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+    
+    sql = """UPDATE connections
+    SET NotificationCounter = 0
+    WHERE (SenderID = %s AND RecipientID = %s);"""
+    values = (senderID, recipientID)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
 
 #SELECT queries
 
@@ -235,6 +261,26 @@ def getLatestSessionID(conversationID):
     cursor.close()
 
     return sessionID    
+
+def getNotificationCounter(senderID, recipientID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """SELECT NotificationCounter
+    FROM connections
+    WHERE (SenderID = %s AND RecipientID = %s)
+    """
+
+    values = (recipientID, senderID)
+    cursor.execute(sql, values)
+    notificationCounter = cursor.fetchone()
+
+    cursor.close()
+
+    return notificationCounter
+
+
+
 
 #Selects all messages within a conversation to retrieve chat history
 def getChatMessages(senderID, recipientID):

@@ -93,13 +93,6 @@ def profile():
 #Creating HTML routes for SQL queries
 #Encrypted data is stored in routes
 
-#HTML route for inserting a new message into messages database
-@views.route("/insert-message/<sessionID>/<recipientID>/<encryptedContent>/<IV>/<dataFormat>")
-@login_required
-def insert_message(sessionID, recipientID, encryptedContent, IV, dataFormat):
-    insertMessage(sessionID, current_user.id, recipientID, encryptedContent, IV, dataFormat)
-    return jsonify({"message": "Message inserted successfully"})
-
 #HTML route for inserting a new session into sessions database
 @views.route("/insert-session/<conversationID>/<encryptedAESKey>")
 @login_required
@@ -117,7 +110,7 @@ def insert_conversation(connectionID):
 #HTML route for updating the timestamp in conversations database
 @views.route("/update-conversation/<conversationID>")
 @login_required
-def update_session(conversationID):
+def update_conversation(conversationID):
     updateConversation(conversationID)
     return jsonify({"message": "Conversation timestamp updated successfully"})
 

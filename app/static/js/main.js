@@ -1,61 +1,133 @@
-import {getConnectionID, getSessionID, getConversationID, updateChatList, appendMessage, appendImage, appendFile} from "./functions.js";
+import {getConnectionID, getSessionID, getConversationID, getSenderID, incrementNotificationCounter, appendMessage, appendImage, appendFile} from "./functions.js";
 
 let sessionSocket;
+let chatUserElements = [];
 
-async function initiateSession(conversationID, encryptedAESKey) {
+async function initiateSession(recipientID, conversationID, encryptedAESKey) {
+
+    //Inserts a session into sessions database
     const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}`);
     const insertSessionData = await insertSessionResponse.json();
-    console.log("Session Data:", insertSessionData);
-
 
     //Connects and establishes a session websocket for current user
     sessionSocket = io.connect('http://127.0.0.1:5000');
 
     sessionSocket.on('connect', () => {
+        //Establishes a web socket when user clicks on a user, resetting notification count
         console.log('WebSocket connection established');
+
+        sessionSocket.emit('join-room', recipientID)
+
+        sessionSocket.emit('reset-notification', recipientID)
+
     });
 
 
     sessionSocket.on('message', async (message) => {
-        console.log("Received message:", message);
-        
-        const idResponse = await fetch(`get-sender-id`);
-        const senderID = await idResponse.json();
+
+        const senderID = await getSenderID();
 
         const chatMessages = document.getElementById("chatbox-messages");
 
+        //Appends a message into HTML in real-time
         appendMessage(message, senderID, chatMessages)
 
         
     })
 
     sessionSocket.on('file', async (file) => {
-        console.log("Received file:", file);
 
-        const idResponse = await fetch(`get-sender-id`);
-        const senderID = await idResponse.json();
+        const senderID = await getSenderID();
 
         const chatMessages = document.getElementById("chatbox-messages");
         
-            
+        //Appends a file/message into HTML in real-time
         if (file.dataFormat == "text/plain" || file.dataFormat == "application/pdf") {
 
-            const decodedText = atob(file.encryptedContent)
-
-            appendFile(file, senderID, decodedText, chatMessages)
-
-
-        } else if (file.dataFormat == "image/png" || file.dataFormat == "image/jpeg") {
+            appendFile(file, senderID, chatMessages)
             
-            const dataURL = `data:${file.dataFormat};base64,${file.encryptedContent}`
+        } else if (file.dataFormat == "image/png" || file.dataFormat == "image/jpeg") {
 
-            appendImage(file, senderID, dataURL, chatMessages)
+            appendImage(file, senderID, chatMessages)
 
         }
+    })
 
-        
+    sessionSocket.on('reset-notification', () => {
+
+        //Gets user element which user clicked on
+        let chatUserElement = chatUserElements.find(element => element.dataset.userId === recipientID);
+
+        //Gets notification element from current chat user element
+        const notificationCounterElement = chatUserElement.querySelector("h2");
+
+        //Sets text content to an empty string, representing '0' i.e no notifications
+        notificationCounterElement.textContent = "";
 
     })
+    
+};
+
+async function updateChatList() {
+
+    //Gets list of all chat users into data variable via JSON
+    const response = await fetch("/get-chat-users");
+    const data = await response.json();
+
+        //Loops through each chat user
+        data.forEach(user => {
+
+            //Gets user element which user clicked on
+            let chatUserElement = chatUserElements.find(element => element.dataset.userId === user.userID);
+            
+            //Creates and pushes a chat user element via HTML if there is no pre-existing chat user element for user
+            if (!chatUserElement) {
+                chatUserElement = document.createElement("div");
+                chatUserElement.className = "chat-user";
+                chatUserElement.dataset.userId = user.userID;
+
+                const usernameElement = document.createElement("h");
+                const firstNameElement = document.createElement("h");   
+                const lastNameElement = document.createElement("h");
+                const notificationCounterElement = document.createElement("h2");
+                const spaceElement = document.createTextNode(" ");
+                const br = document.createElement("br");
+                const hr = document.createElement("hr");
+    
+                usernameElement.textContent = user.username;
+                firstNameElement.textContent = user.firstName;
+                lastNameElement.textContent = user.lastName;
+
+                if (user.notificationCounter !== 0) {
+                    notificationCounterElement.textContent = user.notificationCounter;
+                }
+    
+                chatUserElement.appendChild(usernameElement);
+                chatUserElement.appendChild(notificationCounterElement);
+                chatUserElement.appendChild(br);
+                chatUserElement.appendChild(firstNameElement);
+                chatUserElement.appendChild(spaceElement);
+                chatUserElement.appendChild(lastNameElement);
+                chatUserElement.appendChild(hr);
+
+
+                chatUserElements.push(chatUserElement);
+            }
+                
+        });
+
+        // Determines the desired order based on the fetched data
+        const desiredOrder = data.map(user => user.userID);
+        const chatList = document.getElementById("chat-list");
+
+        // Reorders chat user elements in chatList based on desired order
+        desiredOrder.forEach(userId => {
+            const chatUserElement = chatUserElements.find(element => element.dataset.userId === userId.toString());
+            if (chatUserElement) {
+                chatList.appendChild(chatUserElement);
+            }
+        });
+
 
 
 };
@@ -87,12 +159,11 @@ async function updateUser(recipientID) {
             //Inserts a conversation into database if there is not a conversation
             const insertConversationResponse = await fetch(`/insert-conversation/${connectionID}`);
             const insertConversationData = await insertConversationResponse.json();
-            console.log("Conversation Data:", insertConversationData)
 
             const conversationID = await getConversationID(connectionID)
 
             //Inserts a session into database and establishes websocket
-            initiateSession(conversationID, encryptedAESKey);
+            initiateSession(recipientID, conversationID, encryptedAESKey);
 
 
         } else {
@@ -102,17 +173,18 @@ async function updateUser(recipientID) {
             //Updates the conversation timestamp if there is already a conversation in database
             const updateConversationResponse = await fetch(`update-conversation/${conversationID}`)
             const updateConversationData = await updateConversationResponse.json();
-            console.log("Update Data:", updateConversationData)
             
             //Inserts a session into database and establishes websocket
-            initiateSession(conversationID, encryptedAESKey)
+            initiateSession(recipientID, conversationID, encryptedAESKey)
+
 
 
         }
     } else {
         console.log("Connection not found.");
     }
-}
+
+};
 
 document.getElementById("message-form").addEventListener("submit", async event => {
     event.preventDefault();
@@ -121,19 +193,22 @@ document.getElementById("message-form").addEventListener("submit", async event =
     const messageInput = document.getElementById("message");
     const encryptedContent = messageInput.value;
 
-    const recipientID = chatbox.dataset.recipientId;
+    const senderID = await getSenderID();
+    const recipientID = chatbox.dataset.recipientId;    
 
     const connectionID = await getConnectionID(recipientID);
     const conversationID = await getConversationID(connectionID);
     const sessionID = await getSessionID(conversationID);
 
+
     const dataFormat = "text/short"
 
-    messageInput.value = "";
+    messageInput.value = "";    
 
     //Emits message to flask server
     sessionSocket.emit('message', sessionID, recipientID, encryptedContent, dataFormat);
 
+    sessionSocket.emit('increment-notification', recipientID)
 
 });
 
@@ -143,10 +218,9 @@ document.getElementById("file-upload").addEventListener("change", async event =>
     const chatbox = document.getElementById("chatbox-user");
     const fileInput = document.getElementById("file-input");
     const file = fileInput.files[0];
-    
-    //Splits true file name into two parts e.g. image.png -> ["image", "png"]
     const fileName = file.name
 
+    const senderID = await getSenderID();
     const recipientID = chatbox.dataset.recipientId;
 
     const connectionID = await getConnectionID(recipientID);
@@ -167,16 +241,25 @@ document.getElementById("file-upload").addEventListener("change", async event =>
 
     if (acceptedFormat.includes(dataFormat)) {
         console.log("Accepted")
+        //If file format is an accepted format, emits file to server as an array buffer
         reader.readAsArrayBuffer(file);
     } else {
         console.log("Not accepted")
-        //possible gui response
     }
+
+    sessionSocket.emit('increment-notification', recipientID)
 
 });
 
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    //Disconnects user from websocket if they refresh the page or go to a different page
+    document.addEventListener("beforeunload", () => {
+        if (sessionSocket) {
+            sessionSocket.disconnect()
+        }
+    })
 
     const chatList = document.getElementById("chat-list");
     const chatbox = document.getElementById("chatbox-user");
@@ -186,11 +269,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const clickedUser = event.target.closest(".chat-user");
 
+        const senderID = await getSenderID();
         const recipientID = clickedUser.dataset.userId;
         chatbox.dataset.recipientId = recipientID;
         
+        //Inserts clicked user into conversation and session databases, establishes websocket and resets notifications
         await updateUser(recipientID);
         
+        //Updates chat list on left of screen to correct order
         await updateChatList();
 
 
@@ -199,18 +285,17 @@ document.addEventListener("DOMContentLoaded", () => {
         chatUsers.forEach(user => {
             user.style.backgroundColor = "";
         });
-    
+
+
+        //Sets clicked user to a darker background colour
         clickedUser.style.backgroundColor = "#dde4e4";
     
+        //Displays chatbox
         introduction.style.display = "none";
         chatbox.style.display = "block";
-
-        const idResponse = await fetch(`get-sender-id`);
-        const senderID = await idResponse.json();
  
         //Clears previous chat messages in HTML
         const chatMessages = document.getElementById("chatbox-messages");
-
         chatMessages.innerHTML = ""
 
         //Gets list of all chat messages in a data variable via JSON
@@ -219,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         //decrypt all messages in future
         
-        //Loops through all messages and pushes it to messages HTML, outputting to user's screen
+        //Loops through all messages and pushes them to HTML, outputting to user's screen
         data.forEach(message => {
 
             if (message.dataFormat == "text/short") {
@@ -228,15 +313,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 
             } else if (message.dataFormat == "text/plain" || message.dataFormat == "application/pdf") {
 
-                const decodedText = atob(message.encryptedContent)
-
-                appendFile(message, senderID, decodedText, chatMessages)
+                appendFile(message, senderID, chatMessages)
 
             } else if (message.dataFormat == "image/png" || message.dataFormat == "image/jpeg") {
                 
-                const dataURL = `data:${message.dataFormat};base64,${message.encryptedContent}`
-
-                appendImage(message, senderID, dataURL, chatMessages)
+                appendImage(message, senderID, chatMessages)
 
             } else {
                 console.log("Invalid file type")
@@ -253,3 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateChatList();
 
 });
+
+//have case for when user clicks another user
+//possibly have case for when user exits screen
+//whats my case for when user refreshes - nothing
