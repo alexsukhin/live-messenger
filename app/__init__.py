@@ -25,15 +25,15 @@ except Exception as e:
 
 from .socket import socketio
 from .views import views
-from .auth import auth
+from .routes import routes
 
 socketio.init_app(app, async_mode="threading")
 
 app.register_blueprint(views, url_prefix='/')
-app.register_blueprint(auth, url_prefix='/')
+app.register_blueprint(routes, url_prefix='/')
 
 login_manager = LoginManager(app)
-login_manager.login_view = "auth.login"
+login_manager.login_view = "routes.login"
 
 #Loads user from database into User object
 @login_manager.user_loader

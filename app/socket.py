@@ -4,115 +4,115 @@ from .queries import insertMessage, insertFile, incrementNotificationCounter, re
 import base64
 from datetime import datetime
 
-socketio = SocketIO()
+class ChatSocketIO(SocketIO):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def handle_connect(self):
+        pass
+
+    def handle_joinroom(self, recipientID):
+        room_id = f"room_{current_user.id}_{recipientID}"
+        join_room(room_id)
+
+    def room_exists(self, room_name):
+        #Gets list of current online rooms
+        rooms_dict = self.server.manager.rooms
+
+        #Checks if room is in list, representing if user is online
+        if room_name in rooms_dict['/']:
+            return True
+        else:
+            return False
+    
+    def emit_message(self, event, data, room):
+        #Emits message to javascript client to push messages in real time
+        if self.room_exists(room):
+            self.emit(event, data, room=room)
 
 
-def room_exists(room_name):
-    #Gets list of current online rooms
-    rooms_dict = socketio.server.manager.rooms
+    def handle_message(self, sessionID, recipientID, encryptedContent, dataFormat):
+        senderID = current_user.id
 
-    #Checks if room is in list, representing if user is online
-    if room_name in rooms_dict['/']:
-        return True
-    else:
-        return False
-
-@socketio.on('connect')
-def handle_connect():
-    pass
-
-@socketio.on('join-room')
-def handle_joinroom(recipientID):
-    room_id = f"room_{current_user.id}_{recipientID}"
-
-    join_room(room_id)
-
-
-@socketio.on('message')
-def handle_message(sessionID, recipientID, encryptedContent, dataFormat):
-    senderID = current_user.id
-
-    #Stores message in messages database for retrieval when user opens chat
-    if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat):
-
-        message = {
-            "senderID": senderID,
-            "recipientID": recipientID,
-            "encryptedContent": encryptedContent
+        #Stores message in messages database for retrieval when user opens chat
+        if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat):
+            message = {
+                "senderID": senderID,
+                "recipientID": recipientID,
+                "encryptedContent": encryptedContent
             }
 
-        #Emits message to javascript client to push messages in real time
         #Emits message to both sender and recipient if they are online
-        if room_exists(f"room_{senderID}_{recipientID}"):
-            socketio.emit('message', message, room=f"room_{senderID}_{recipientID}")
+        self.emit_message("message", message, f"room_{senderID}_{recipientID}")
+        self.emit_message("message", message, f"room_{recipientID}_{senderID}")
 
-        if room_exists(f"room_{recipientID}_{senderID}"):
-            socketio.emit('message', message, room=f"room_{recipientID}_{senderID}")
+    def handle_file(self, sessionID, recipientID, encryptedContent, fileName, dataFormat, IV):
+        senderID = current_user.id
 
+        #Creates unique identifier for file name based on current time
+        time = datetime.now()
+        fileName = str(time.hour) + str(time.minute) + str(time.second) + "%" + str(fileName)
 
-@socketio.on('file')
-def handle_file(sessionID, recipientID, encryptedContent, fileName, dataFormat, IV):
+        #Sets file path location for server storage
+        filePath = "D:\\Live Messenger\\files\\" + fileName
 
-    senderID = current_user.id
+        #Encodes array buffer to base 64 string
+        #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
+        base64Data = base64.b64encode(encryptedContent).decode('utf-8')
 
-    #Creates unique identifier for file name based on current time
-    time = datetime.now()
-    fileName = str(time.hour) + str(time.minute) + str(time.second) + "%" + str(fileName)
+        if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
+            with open(filePath, "wb") as file:
+                file.write(encryptedContent)
 
-    #Sets file path location for server storage
-    filePath = "D:\\Live Messenger\\files\\" + fileName
+            file = {
+                "senderID": senderID,
+                "recipientID": recipientID,
+                "encryptedContent": base64Data,
+                "filePath" : filePath,
+                "dataFormat": dataFormat,
+                "IV": IV
+            }
 
-    #Encodes array buffer to base 64 string
-    #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
-    base64Data = base64.b64encode(encryptedContent).decode('utf-8')
-    
+            #Emits message to both sender and recipient if they are online
+            self.emit_message("file", file, f"room_{senderID}_{recipientID}")
+            self.emit_message("file", file, f"room_{recipientID}_{senderID}")
+        else:
+            print("Failed to insert file, possibly too big")
+            #fix file size issue
 
-    if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
-        with open(filePath, "wb") as file:
-            file.write(encryptedContent)
+    def reset_notification_counter(self, recipientID):
+        senderID = current_user.id
+        
+        #Sets notification counter to 0 in connections database
+        resetNotificationCounter(senderID, recipientID)
 
-        file = {
-            "senderID": senderID,
-            "recipientID": recipientID,
-            "encryptedContent": base64Data,
-            "filePath" : filePath,
-            "dataFormat": dataFormat,
-            "IV": IV
-        }
-        #Emits message to javascript client to push messages in real time
-        #Emits message to both sender and recipient if they are online
-        if room_exists(f"room_{senderID}_{recipientID}"):
-            socketio.emit('file', file, room=f"room_{senderID}_{recipientID}")
+        self.emit('reset-notification', room=f"room_{senderID}_{recipientID}")
 
-        if room_exists(f"room_{recipientID}_{senderID}"):
-            socketio.emit('file', file, room=f"room_{recipientID}_{senderID}")
-    else:
-        print("Failed to insert file, possibly too big")
-        #fix file size issue
+    def increment_notification_counter(self, recipientID):
 
-@socketio.on('reset-notification')
-def reset_notification_counter(recipientID):
+        senderID = current_user.id
 
-    senderID = current_user.id
+        #Increments notification counter by one if the recipient's room doesn't exist
+        if (self.room_exists(f"room_{recipientID}_{senderID}") == False):
+            incrementNotificationCounter(senderID, recipientID)
 
-    #Sets notification counter to 0 in connections database
-    resetNotificationCounter(senderID, recipientID)
+#Creating instance of socket
+socketio = ChatSocketIO()
 
-    socketio.emit('reset-notification', room=f"room_{senderID}_{recipientID}")
-
-
-
-@socketio.on('increment-notification')
-def increment_notification_counter(recipientID):
-
-    senderID = current_user.id
-
-    #Increments notification counter by one if the recipient's room doesn't exist
-    if (room_exists(f"room_{recipientID}_{senderID}") == False):
-        incrementNotificationCounter(senderID, recipientID)
+#Event handlers
+socketio.on_event('connect', socketio.handle_connect)
+socketio.on_event('join-room', socketio.handle_joinroom)
+socketio.on_event('message', socketio.handle_message)
+socketio.on_event('file', socketio.handle_file)
+socketio.on_event('reset-notification', socketio.reset_notification_counter)
+socketio.on_event('increment-notification', socketio.increment_notification_counter)
 
 
 #implemented notification counter, possibly fix query so highlighted user goes to top (after encryption)
 #implement encryption, possibly multiple encryptions - not sure how long, give myself 5 days
 #update analysis, design
 #start technical solution after holiday or before if time
+
+#refactor code into oop
+
+#then implement encryption using new oop system, 

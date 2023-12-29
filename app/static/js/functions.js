@@ -27,12 +27,6 @@ export async function getSenderID() {
     return senderID
 };
 
-//possibly delete
-export async function incrementNotificationCounter(senderID, recipientID) {
-    const updateNotificationResponse = await fetch(`increase-notification-counter/${senderID}/${recipientID}`)
-    const updateNotificationData = await updateNotificationResponse.json();
-};
-
 export function appendMessage(message, senderID, chatMessages) {
     if (message.senderID == senderID) {
         const senderMessage = document.createElement("div");

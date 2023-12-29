@@ -1,4 +1,4 @@
-import {getConnectionID, getSessionID, getConversationID, getSenderID, incrementNotificationCounter, appendMessage, appendImage, appendFile} from "./functions.js";
+import {getConnectionID, getSessionID, getConversationID, getSenderID, appendMessage, appendImage, appendFile} from "./functions.js";
 
 let sessionSocket;
 let chatUserElements = [];
@@ -250,7 +250,6 @@ document.getElementById("file-upload").addEventListener("change", async event =>
     sessionSocket.emit('increment-notification', recipientID)
 
 });
-
 
 document.addEventListener("DOMContentLoaded", () => {
 
