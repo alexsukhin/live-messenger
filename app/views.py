@@ -23,6 +23,12 @@ def insert_conversation(connectionID):
     return jsonify({"message": "Conversation inserted successfully"})
 
 #HTML route for updating the timestamp in conversations database
+@views.route("/update-RSA-public-key/<publicRSAKey>")
+@login_required
+def update_RSA_public_key(publicRSAKey):
+    updateRSAPublicKey(current_user.id, publicRSAKey)
+    return jsonify({"message": "Updated public RSA key successfully"})
+
 @views.route("/update-conversation/<conversationID>")
 @login_required
 def update_conversation(conversationID):
@@ -91,3 +97,10 @@ def get_chat_messages(recipientID):
 def get_chat_users():
     chatUsers = getChatUsers(current_user.id)
     return jsonify(chatUsers)
+
+
+@views.route("/get-RSA-public-key")
+@login_required
+def get_RSA_public_key():
+    RSAPublicKey = getRSAPublicKey(current_user.id)
+    return jsonify(RSAPublicKey[0])

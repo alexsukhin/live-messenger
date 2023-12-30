@@ -115,4 +115,12 @@ socketio.on_event('increment-notification', socketio.increment_notification_coun
 
 #refactor code into oop
 
-#then implement encryption using new oop system, 
+#then implement encryption using new oop system
+
+#i will use libraries for aes and rsa because it is highly reccomended to not do that, i will say this
+#in documentation and implementing this will show off my database and key management
+#i will implement other encryptions to represent the algorithm part
+
+#stored rsa keys, tmrw implement aes and rsa encryption
+#1st and 2nd implement other encryptions
+#3rd do option deciding which encryption & possibly documentation

@@ -39,7 +39,7 @@ class RoutesManager():
         hashedPassword = self.encryptionManager.hashPassword(password)
 
         #Inserts user into user database
-        insertUser(username, hashedPassword, firstName, lastName, "test")
+        insertUser(username, hashedPassword, firstName, lastName)
         
         #Logs user into account and redirects user to dashboard page if user inserted into database
         newUser = getUser(username)
@@ -76,7 +76,7 @@ class RoutesManager():
         logout_user()
         return True
 
-    def dashboard(self, username):
+    def addUser(self, username):
         recipient = getUser(username)
         senderID = current_user.id
 
@@ -183,7 +183,8 @@ class RoutesBlueprint(Blueprint):
     def dashboard(self):
         if request.method == "POST":
             if "username" in request.form:
-                self.routesManager.dashboard(username)
+                username = request.form.get("username")
+                self.routesManager.addUser(username)
         
         return render_template("dashboard.html", user=current_user)
 

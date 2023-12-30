@@ -7,12 +7,12 @@ from . import mysql
 #INSERT queries
 
 #Inserts a new user on signup into users database
-def insertUser(username, password, firstName, lastName, publicRSAKey):
+def insertUser(username, password, firstName, lastName):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO users (Username, HashedPassword, FirstName, LastName, PublicRSAKey) VALUES (%s, %s, %s, %s, %s);"
-    values = (username, password, firstName, lastName, publicRSAKey,)
+    sql = "INSERT INTO users (Username, HashedPassword, FirstName, LastName) VALUES (%s, %s, %s, %s);"
+    values = (username, password, firstName, lastName,)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -126,6 +126,18 @@ def updatePassword(userID, password):
     values = (hashedPassword, userID)
     cursor.execute(sql, values)
 
+    conn.commit()
+    cursor.close()
+
+def updateRSAPublicKey(userID, publicRSAKey):
+
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET PublicRSAKey = %s WHERE UserID = %s;"
+    values = (publicRSAKey, userID)
+    cursor.execute(sql, values)
+    
     conn.commit()
     cursor.close()
 
@@ -346,3 +358,19 @@ def getChatUsers(userID):
 
 
     return chatUsersList
+
+
+def getRSAPublicKey(userID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT PublicRSAKey FROM users WHERE UserID = %s
+    """
+    cursor.execute(sql, (userID,))
+
+    RSAPublicKey = cursor.fetchone()
+
+    cursor.close()
+
+    return RSAPublicKey

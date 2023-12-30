@@ -1,4 +1,6 @@
 import {getConnectionID, getSessionID, getConversationID, getSenderID, appendMessage, appendImage, appendFile} from "./functions.js";
+import {encryptionManager} from "./encryption.js";
+import {openDatabase, saveKey, getPrivateKey} from "./indexeddb.js";
 
 let sessionSocket;
 let chatUserElements = [];
@@ -251,7 +253,7 @@ document.getElementById("file-upload").addEventListener("change", async event =>
 
 });
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     //Disconnects user from websocket if they refresh the page or go to a different page
     document.addEventListener("beforeunload", () => {
@@ -259,6 +261,41 @@ document.addEventListener("DOMContentLoaded", () => {
             sessionSocket.disconnect()
         }
     })
+
+    const senderID = await getSenderID();
+
+    const idResponse = await fetch(`get-RSA-public-key`);
+    const RSAPublicKey = await idResponse.json();
+
+    //If RSAPublicKey is null, generate RSA keys
+    if (RSAPublicKey == null) {
+
+
+        encryptionManager.generateRSAKeyPair()
+            .then(async (keyPair) =>{
+                console.log("Public key:", keyPair.publicKey);
+                console.log("Private key:", keyPair.privateKey);
+
+                const insertRSAResponse = await fetch(`/update-RSA-public-key/${keyPair.publicKey}`);
+                const insertResponseData = await insertRSAResponse.json();
+                console.log(insertResponseData);
+
+                const dbRequest = openDatabase();
+
+                dbRequest.onsuccess = (event) => {
+                    const db = event.target.result;
+                    saveKey(keyPair.privateKey, senderID, db)
+                }
+
+            })
+
+
+        console.log("No public key")
+    } else {
+        console.log("Public key")
+    }
+
+
 
     const chatList = document.getElementById("chat-list");
     const chatbox = document.getElementById("chatbox-user");
@@ -268,7 +305,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const clickedUser = event.target.closest(".chat-user");
 
-        const senderID = await getSenderID();
         const recipientID = clickedUser.dataset.userId;
         chatbox.dataset.recipientId = recipientID;
         
@@ -333,7 +369,3 @@ document.addEventListener("DOMContentLoaded", () => {
     updateChatList();
 
 });
-
-//have case for when user clicks another user
-//possibly have case for when user exits screen
-//whats my case for when user refreshes - nothing
