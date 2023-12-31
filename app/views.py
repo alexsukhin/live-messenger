@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_login import login_required, current_user
 from .queries import *
+import base64
 
 
 views = Blueprint("views", __name__)
@@ -12,6 +13,7 @@ views = Blueprint("views", __name__)
 @views.route("/insert-session/<conversationID>/<encryptedAESKey>")
 @login_required
 def insert_session(conversationID, encryptedAESKey):
+    print(encryptedAESKey)
     insertSession(conversationID, encryptedAESKey)
     return jsonify({"message": "Session inserted successfully"})
 
@@ -85,7 +87,7 @@ def get_chat_messages(recipientID):
                 encryptedContent = file.read()
 
                 #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
-                base64Data = base64.b64encode(encryptedContent).decode('utf-8')
+                base64Data = base64.b64encode(encryptedContent).decode("utf-8")
                 message["encryptedContent"] = base64Data
 
 
@@ -104,3 +106,13 @@ def get_chat_users():
 def get_RSA_public_key():
     RSAPublicKey = getRSAPublicKey(current_user.id)
     return jsonify(RSAPublicKey[0])
+
+@views.route("/get-encrypted-AES-key/<sessionID>")
+@login_required
+def get_encrypted_AES_key(sessionID):
+    encryptedAESKey = getEncryptedAESKey(sessionID)    
+
+    #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
+    base64Key = base64.b64encode(encryptedAESKey).decode("utf-8")
+
+    return jsonify(base64Key)

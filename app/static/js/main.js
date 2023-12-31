@@ -1,8 +1,12 @@
-import {getConnectionID, getSessionID, getConversationID, getSenderID, appendMessage, appendImage, appendFile} from "./functions.js";
+import {getConnectionID, getSessionID, getConversationID, getSenderID, arrayBuffertoBase64, appendMessage, appendImage, appendFile} from "./functions.js";
 import {encryptionManager} from "./encryption.js";
 import {openDatabase, saveKey, getPrivateKey} from "./indexeddb.js";
 
+//Opens IndexedDB database
+const dbRequest = openDatabase();
+
 let sessionSocket;
+let AESKey;
 let chatUserElements = [];
 
 async function initiateSession(recipientID, conversationID, encryptedAESKey) {
@@ -38,6 +42,8 @@ async function initiateSession(recipientID, conversationID, encryptedAESKey) {
     })
 
     sessionSocket.on('file', async (file) => {
+
+        console.log(file.encryptedContent)
 
         const senderID = await getSenderID();
 
@@ -143,8 +149,6 @@ async function updateUser(recipientID) {
         console.log('Websocket disconnected')
     }
 
-    const encryptedAESKey = "test";
-
     const connectionID = await getConnectionID(recipientID);
 
     //Checks if there is a connection between two users
@@ -153,7 +157,15 @@ async function updateUser(recipientID) {
         const conversationCheckResponse = await fetch(`/check-conversation/${connectionID}`);
         const conversationCheckData = await conversationCheckResponse.json();
 
+        //Generates AES key
+        AESKey = await encryptionManager.generateAESKey()
 
+        //Fetches public RSA key
+        const idResponse = await fetch(`get-RSA-public-key`);
+        const RSAPublicKey = await idResponse.json().then(JSON.parse);
+
+        //Encrypts AES key
+        const encryptedAESKey = await encryptionManager.encryptAESKey(AESKey, RSAPublicKey)
 
         //Checks if a conversation between two users has been created before
         if (!conversationCheckData) {
@@ -193,7 +205,7 @@ document.getElementById("message-form").addEventListener("submit", async event =
 
     const chatbox = document.getElementById("chatbox-user");
     const messageInput = document.getElementById("message");
-    const encryptedContent = messageInput.value;
+    const plaintext = messageInput.value;
 
     const senderID = await getSenderID();
     const recipientID = chatbox.dataset.recipientId;    
@@ -202,13 +214,19 @@ document.getElementById("message-form").addEventListener("submit", async event =
     const conversationID = await getConversationID(connectionID);
     const sessionID = await getSessionID(conversationID);
 
-
     const dataFormat = "text/short"
 
     messageInput.value = "";    
 
+    const IV = crypto.getRandomValues(new Uint8Array(16));
+
+    const encryptedContent = await encryptionManager.encryptData(plaintext, AESKey, IV)
+
+    const base64EncryptedContent = await arrayBuffertoBase64(encryptedContent);
+    const base64IV = await arrayBuffertoBase64(IV);
+
     //Emits message to flask server
-    sessionSocket.emit('message', sessionID, recipientID, encryptedContent, dataFormat);
+    sessionSocket.emit('message', sessionID, recipientID, base64EncryptedContent, dataFormat, base64IV);
 
     sessionSocket.emit('increment-notification', recipientID)
 
@@ -229,16 +247,21 @@ document.getElementById("file-upload").addEventListener("change", async event =>
     const conversationID = await getConversationID(connectionID);
     const sessionID = await getSessionID(conversationID);
 
-    const IV = "test"
+    const IV = crypto.getRandomValues(new Uint8Array(16));
+    const base64IV = await arrayBuffertoBase64(IV);
+
     const dataFormat = file.type;
     const acceptedFormat = ["text/plain", "application/pdf", "image/png", "image/jpeg"]
 
     const reader = new FileReader();
 
-    reader.onload = (data) => {
+    reader.onload = async (data) => {
         const fileData = data.target.result
 
-        sessionSocket.emit('file', sessionID, recipientID, fileData, fileName, dataFormat, IV);
+        //Emits array buffer of bytes to python server
+        const encryptedFileData = await encryptionManager.encryptImage(fileData, AESKey, IV)
+
+        sessionSocket.emit('file', sessionID, recipientID, encryptedFileData, fileName, dataFormat, base64IV);
     }
 
     if (acceptedFormat.includes(dataFormat)) {
@@ -270,25 +293,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     //If RSAPublicKey is null, generate RSA keys
     if (RSAPublicKey == null) {
 
+        //Gets key pair for RSA encryption
+        const keyPair = await encryptionManager.generateRSAKeyPair()
 
-        encryptionManager.generateRSAKeyPair()
-            .then(async (keyPair) =>{
-                console.log("Public key:", keyPair.publicKey);
-                console.log("Private key:", keyPair.privateKey);
+        //Updates public RSA key in users database
+        const insertRSAResponse = await fetch(`/update-RSA-public-key/${keyPair.publicKey}`);
+        const insertResponseData = await insertRSAResponse.json();
+        console.log(insertResponseData);
 
-                const insertRSAResponse = await fetch(`/update-RSA-public-key/${keyPair.publicKey}`);
-                const insertResponseData = await insertRSAResponse.json();
-                console.log(insertResponseData);
-
-                const dbRequest = openDatabase();
-
-                dbRequest.onsuccess = (event) => {
-                    const db = event.target.result;
-                    saveKey(keyPair.privateKey, senderID, db)
-                }
-
-            })
-
+        //Inserts private RSA key in IndexedDB Database
+        dbRequest.onsuccess = (event) => {
+            const db = event.target.result;
+            saveKey(keyPair.privateKey, senderID, db)
+        }
 
         console.log("No public key")
     } else {
@@ -338,9 +355,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         const data = await response.json();
 
         //decrypt all messages in future
-        
+
         //Loops through all messages and pushes them to HTML, outputting to user's screen
-        data.forEach(message => {
+        data.forEach(async (message) => {
+
+            const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
+            const encryptedAESKey = await idResponse.json()
+            console.log(encryptedAESKey)
+            //next create decryption algorithm, see if it outputs different aes keys
+            
+
 
             if (message.dataFormat == "text/short") {
 

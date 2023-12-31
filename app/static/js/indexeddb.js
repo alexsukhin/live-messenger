@@ -1,4 +1,6 @@
 
+//https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB
+
 export function openDatabase() {
     //Creates an IndexedDB database
     const request = indexedDB.open("RSAPrivateKeys", 1)

@@ -31,15 +31,17 @@ class ChatSocketIO(SocketIO):
             self.emit(event, data, room=room)
 
 
-    def handle_message(self, sessionID, recipientID, encryptedContent, dataFormat):
+    def handle_message(self, sessionID, recipientID, encryptedContent, dataFormat, IV):
         senderID = current_user.id
 
         #Stores message in messages database for retrieval when user opens chat
-        if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat):
+        if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, IV):
             message = {
+                "sessionID": sessionID,
                 "senderID": senderID,
                 "recipientID": recipientID,
-                "encryptedContent": encryptedContent
+                "encryptedContent": encryptedContent,
+                "IV": IV
             }
 
         #Emits message to both sender and recipient if they are online
@@ -61,10 +63,12 @@ class ChatSocketIO(SocketIO):
         base64Data = base64.b64encode(encryptedContent).decode('utf-8')
 
         if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
+            #Try to output real encrypted image
             with open(filePath, "wb") as file:
                 file.write(encryptedContent)
 
             file = {
+                "sessionID": sessionID,
                 "senderID": senderID,
                 "recipientID": recipientID,
                 "encryptedContent": base64Data,
@@ -117,10 +121,16 @@ socketio.on_event('increment-notification', socketio.increment_notification_coun
 
 #then implement encryption using new oop system
 
-#i will use libraries for aes and rsa because it is highly reccomended to not do that, i will say this
+#i will use libraries for aes and rsa because it is highly reccomended to do that, i will say this
 #in documentation and implementing this will show off my database and key management
 #i will implement other encryptions to represent the algorithm part
 
 #stored rsa keys, tmrw implement aes and rsa encryption
 #1st and 2nd implement other encryptions
 #3rd do option deciding which encryption & possibly documentation
+
+#1st finish aes rsa
+#2nd implement other encryption
+#3rd do option deciding which encryption
+#4th and 5th documentation
+#6-8 revise physics, anki, maths

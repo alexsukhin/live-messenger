@@ -27,6 +27,12 @@ export async function getSenderID() {
     return senderID
 };
 
+export async function arrayBuffertoBase64(arrayBuffer) {
+    //https://stackoverflow.com/questions/9267899/arraybuffer-to-base64-encoded-string
+    const base64String = btoa([].reduce.call(new Uint8Array(arrayBuffer),function(p,c){return p+String.fromCharCode(c)},''));
+    return base64String
+}
+
 export function appendMessage(message, senderID, chatMessages) {
     if (message.senderID == senderID) {
         const senderMessage = document.createElement("div");

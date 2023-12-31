@@ -37,12 +37,12 @@ def insertConnection(senderID, recipientID):
     cursor.close()
 
 #Inserts a new message into messages database
-def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat):
+def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, IV):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, DataFormat) VALUES (%s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, encryptedContent, dataFormat)
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, DataFormat, IV) VALUES (%s, %s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, encryptedContent, dataFormat, IV)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -299,7 +299,7 @@ def getChatMessages(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql="""SELECT SenderID, RecipientID, EncryptedContent, FilePath, DataFormat FROM messages
+    sql="""SELECT SessionID, SenderID, RecipientID, EncryptedContent, FilePath, DataFormat FROM messages
     WHERE (SenderID = %s AND RecipientID = %s)
     OR (SenderID = %s AND RecipientID = %s)
     ORDER BY Timestamp ASC;"""
@@ -314,11 +314,12 @@ def getChatMessages(senderID, recipientID):
     #Appends invidual messages each in a dictionary format into a list
     for message in messages:
         messageDict = {
-            "senderID": message[0],
-            "recipientID" : message[1],
-            "encryptedContent": message[2],
-            "filePath": message[3],
-            "dataFormat": message[4]
+            "sessionID": message[0],
+            "senderID": message[1],
+            "recipientID" : message[2],
+            "encryptedContent": message[3],
+            "filePath": message[4],
+            "dataFormat": message[5]
         }
         
         messagesList.append(messageDict)
@@ -368,9 +369,25 @@ def getRSAPublicKey(userID):
     SELECT PublicRSAKey FROM users WHERE UserID = %s
     """
     cursor.execute(sql, (userID,))
-
     RSAPublicKey = cursor.fetchone()
 
     cursor.close()
 
     return RSAPublicKey
+
+
+def getEncryptedAESKey(sessionID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT EncryptedAESKey FROM sessions WHERE SessionID = %s
+    """
+
+    cursor.execute(sql, (sessionID,))
+    encryptedAESKey = cursor.fetchone()
+
+    cursor.close()
+
+    return encryptedAESKey[0]
+
