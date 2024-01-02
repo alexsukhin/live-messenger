@@ -66,12 +66,12 @@ def insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
     
 
 #Inserts a new session when user opens a chat session into sessions database
-def insertSession(conversationID, encryptedAESKey):
+def insertSession(conversationID, senderEncryptedAESKey, recipientEncryptedAESKey):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO sessions (ConversationID, EncryptedAESKey) VALUES (%s, %s);"
-    values = (conversationID, encryptedAESKey,)
+    sql = "INSERT INTO sessions (ConversationID, SenderEncryptedAESKey, RecipientEncryptedAESKey) VALUES (%s, %s, %s);"
+    values = (conversationID, senderEncryptedAESKey, recipientEncryptedAESKey)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -129,6 +129,7 @@ def updatePassword(userID, password):
     conn.commit()
     cursor.close()
 
+#Updates null RSA placeholder with public RSA key
 def updateRSAPublicKey(userID, publicRSAKey):
 
     conn = mysql.connection
@@ -166,6 +167,7 @@ def incrementNotificationCounter(senderID, recipientID):
     conn.commit()
     cursor.close()
 
+#Resets notification counter to zero
 def resetNotificationCounter(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -274,6 +276,7 @@ def getLatestSessionID(conversationID):
 
     return sessionID    
 
+#Gets notification counter from connections database
 def getNotificationCounter(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -290,9 +293,6 @@ def getNotificationCounter(senderID, recipientID):
     cursor.close()
 
     return notificationCounter
-
-
-
 
 #Selects all messages within a conversation to retrieve chat history
 def getChatMessages(senderID, recipientID):
@@ -362,7 +362,7 @@ def getChatUsers(userID):
 
     return chatUsersList
 
-
+#Gets RSA Public key from users database
 def getRSAPublicKey(userID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -377,19 +377,25 @@ def getRSAPublicKey(userID):
 
     return RSAPublicKey
 
-
+#Gets encrypted AES keys from sessions database
 def getEncryptedAESKey(sessionID):
     conn = mysql.connection
     cursor = conn.cursor()
 
     sql = """
-    SELECT EncryptedAESKey FROM sessions WHERE SessionID = %s
+    SELECT SenderEncryptedAESKey, RecipientEncryptedAESKey FROM sessions WHERE SessionID = %s
     """
-
     cursor.execute(sql, (sessionID,))
-    encryptedAESKey = cursor.fetchone()
+    encryptedAESKeys = cursor.fetchone()
 
     cursor.close()
 
-    return encryptedAESKey[0]
+
+    AESKeyDict = {
+        "senderEncryptedAESKey" : encryptedAESKeys[0],
+        "recipientEncryptedAESKey" : encryptedAESKeys[1]
+    }
+
+
+    return AESKeyDict
 

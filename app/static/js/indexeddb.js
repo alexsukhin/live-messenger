@@ -12,12 +12,12 @@ export function openDatabase() {
     return new Promise((resolve, reject) => {
 
             //Creates an IndexedDB database
-            const request = indexedDB.open("RSAPrivateKeys", 1)
+            const request = indexedDB.open("Messenger", 1);
             
             //Sets up database structure
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                db.createObjectStore("Key", {keyPath: "userID"})
+                db.createObjectStore("Key", {keyPath: "userID"});
             };
             
             request.onsuccess = (event) => {
@@ -28,12 +28,12 @@ export function openDatabase() {
             
             request.onerror = (event) =>     {
                 console.error("Error opening IndexedDB:", event.target.error);
-                reject(event.target.error)
+                reject(event.target.error);
             };
 
 
     })
-}
+};
 
 export function saveKey(RSAPrivateKey, userID) {
     return new Promise((resolve, reject) => {
@@ -46,8 +46,8 @@ export function saveKey(RSAPrivateKey, userID) {
         }
     
         //Accesses Key storage
-        const transaction = db.transaction(["Key"], "readwrite")
-        const objStore = transaction.objectStore("Key")
+        const transaction = db.transaction(["Key"], "readwrite");
+        const objStore = transaction.objectStore("Key");
     
         const key = {
             userID : userID,
@@ -55,11 +55,11 @@ export function saveKey(RSAPrivateKey, userID) {
         };
     
         //Adds data to object store
-        const addRequest = objStore.add(key)
+        const addRequest = objStore.add(key);
     
         addRequest.onsuccess = (event) => {
             console.log("Private key saved successfully:", event.target.result);
-            resolve(event.target.result)
+            resolve(event.target.result);
         };
     
         addRequest.onerror = (event) => {
@@ -69,7 +69,7 @@ export function saveKey(RSAPrivateKey, userID) {
 
     })
 
-}
+};
 
 export function getPrivateKey(userID) {
 
@@ -83,23 +83,21 @@ export function getPrivateKey(userID) {
 
 
         //Accesses key storage
-        const transaction = db.transaction(["Key"], "readonly")
-        const objStore = transaction.objectStore("Key")
+        const transaction = db.transaction(["Key"], "readonly");
+        const objStore = transaction.objectStore("Key");
 
         //Gets key from userID
-        const getRequest = objStore.get(userID)
+        const getRequest = objStore.get(userID);
 
         getRequest.onsuccess = (event) => {
-            const privateKey = event.target.result
-            console.log(getRequest)
+            const privateKey = event.target.result;
             resolve(privateKey.RSAPrivateKey);
         };
 
         getRequest.onerror = (event) => {
             console.error("Error retrieving private key:", event.target.error);
-
             reject(event.target.error);
         };
 
     })
-}
+};

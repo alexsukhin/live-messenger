@@ -13,13 +13,13 @@ views = Blueprint("views", __name__)
 @views.route("/insert-session/<conversationID>", methods=["POST"])
 @login_required
 def insert_session(conversationID):
+        data = request.get_json()
+        senderEncryptedAESKey = data.get("senderEncryptedAESKey")
+        recipientEncryptedAESKey = data.get("recipientEncryptedAESKey")
 
-    data = request.get_json()
-    encryptedAESKey = data.get("encryptedAESKey")
+        insertSession(conversationID, senderEncryptedAESKey, recipientEncryptedAESKey)
 
-    insertSession(conversationID, encryptedAESKey)
-
-    return jsonify({"message": "Session inserted successfully"})
+        return jsonify({"message": "Session inserted successfully"})
 
 #HTML route for inserting a new conversation into conversations database
 @views.route("/insert-conversation/<connectionID>")
@@ -115,7 +115,7 @@ def get_RSA_public_key(recipientID):
 @views.route("/get-encrypted-AES-key/<userID>")
 @login_required
 def get_encrypted_AES_key(userID):
-    encryptedAESKey = getEncryptedAESKey(userID)
+    encryptedAESKeyDict = getEncryptedAESKey(userID)
 
-    #Sends encryptedAESKey as a base64 string
-    return jsonify(encryptedAESKey)
+    #Sends encryptedAESKeys as base64 strings in a dictionary
+    return jsonify(encryptedAESKeyDict)

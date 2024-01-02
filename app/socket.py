@@ -36,6 +36,7 @@ class ChatSocketIO(SocketIO):
 
         #Stores message in messages database for retrieval when user opens chat
         if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, IV):
+        
             message = {
                 "sessionID": sessionID,
                 "senderID": senderID,
@@ -47,6 +48,7 @@ class ChatSocketIO(SocketIO):
         #Emits message to both sender and recipient if they are online
         self.emit_message("message", message, f"room_{senderID}_{recipientID}")
         self.emit_message("message", message, f"room_{recipientID}_{senderID}")
+
 
     def handle_file(self, sessionID, recipientID, encryptedContent, fileName, dataFormat, IV):
         senderID = current_user.id
@@ -113,24 +115,15 @@ socketio.on_event('reset-notification', socketio.reset_notification_counter)
 socketio.on_event('increment-notification', socketio.increment_notification_counter)
 
 
-#implemented notification counter, possibly fix query so highlighted user goes to top (after encryption)
 #implement encryption, possibly multiple encryptions - not sure how long, give myself 5 days
 #update analysis, design
 #start technical solution after holiday or before if time
 
-#refactor code into oop
-
-#then implement encryption using new oop system
-
-#i will use libraries for aes and rsa because it is highly reccomended to do that, i will say this
-#in documentation and implementing this will show off my database and key management
 #i will implement other encryptions to represent the algorithm part
 
 #stored rsa keys, tmrw implement aes and rsa encryption
 #2nd and 3rd implement other encryptions, decide which encryptions option
 
-#I finished AES-RSA encryption/decryption, make code cleaner, do comments, figure out double problem
-#2nd implement other encryption
-#3rd do option deciding which encryption
+#3rd implement other encryptions, option deciding which encryptions to do
 #4th and 5th documentation
 #6-8 revise physics, anki, maths

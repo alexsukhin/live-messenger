@@ -66,8 +66,8 @@ class EncryptionManager {
 
     async decryptAESKey(encryptedAESKey, RSAPrivateKey) {
 
-      try {
       
+      //Decrypts AES key with private RSA key
       const AESKey = await crypto.subtle.decrypt(
         {
           name: "RSA-OAEP"
@@ -78,18 +78,15 @@ class EncryptionManager {
 
       return AESKey
 
-    } catch (error) {
-        console.error("Error during decryption:", error);
-        throw error;
-    }
-
     }
 
     async encryptData(plaintext, AESKey, IV) {
 
+      //Converts plaintext into array buffer
       const textEncoder = new TextEncoder();
       const data = textEncoder.encode(plaintext);
 
+      //Converts AES key array buffer into internal cryptoweb object
       const internalAESKey = await crypto.subtle.importKey(
         "raw",
         AESKey,
@@ -100,6 +97,7 @@ class EncryptionManager {
         ["encrypt"]
       )
 
+      //Encrypts data with AES key
       const encryptedContent = await crypto.subtle.encrypt(
         {
           name: "AES-CBC",
@@ -114,6 +112,7 @@ class EncryptionManager {
 
     async encryptFile(plaintext, AESKey, IV) {
 
+      //Converts AES key array buffer into internal cryptoweb object
       const internalAESKey = await crypto.subtle.importKey(
         "raw",
         AESKey,
@@ -124,6 +123,7 @@ class EncryptionManager {
         ["encrypt"]
       )
 
+      //Encrypts data with AES key
       const encryptedContent = await crypto.subtle.encrypt(
         {
           name: "AES-CBC",
@@ -138,6 +138,7 @@ class EncryptionManager {
 
     async decryptData(encryptedContent, AESKey, IV) {
 
+      //Converts AES key array buffer into internal cryptoweb object
       const internalAESKey = await crypto.subtle.importKey(
         "raw",
         AESKey,
@@ -148,6 +149,7 @@ class EncryptionManager {
         ["decrypt"]
       )
 
+      //Decrypts data with AES key
       const decryptedContent = await crypto.subtle.decrypt(
         {
           name: "AES-CBC",
@@ -157,6 +159,7 @@ class EncryptionManager {
         encryptedContent
       )
 
+      //Converts data from array buffer to plaintext
       const textDecoder = new TextDecoder();
       const plaintext = textDecoder.decode(decryptedContent);
 
@@ -166,6 +169,7 @@ class EncryptionManager {
 
     async decryptImage(encryptedContent, AESKey, IV) {
 
+      //Converts AES key array buffer into internal cryptoweb object
       const internalAESKey = await crypto.subtle.importKey(
         "raw",
         AESKey,
@@ -176,6 +180,7 @@ class EncryptionManager {
         ["decrypt"]
       )
 
+      //Decrypts data with AES key
       const decryptedContent = await crypto.subtle.decrypt(
         {
           name: "AES-CBC",
