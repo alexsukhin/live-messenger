@@ -1,3 +1,4 @@
+import {encryptionManager} from "./encryption.js";
 
 export async function getConnectionID(recipientID) {
     //Gets connection ID and returns as a JSON response
@@ -33,11 +34,33 @@ export async function arrayBuffertoBase64(arrayBuffer) {
     return base64String
 }
 
-export function appendMessage(message, senderID, chatMessages) {
+export async function Base64toArrayBuffer(base64String) {
+    
+    const plaintext = atob(base64String)
+
+    //https://stackoverflow.com/questions/21797299/convert-base64-string-to-arraybuffer
+    //Converts plaintext into 8 bit array of bytes in order to output PDF files correctly
+    const bytes = new Uint8Array(plaintext.length);
+    for (let i = 0; i < plaintext.length; i++) {
+        bytes[i] = plaintext.charCodeAt(i)
+    }
+
+    return bytes
+}
+
+export async function appendMessage(message, senderID, chatMessages, AESKey) {
+
+    const bufferContent = await Base64toArrayBuffer(message.content);
+    const bufferIV = await Base64toArrayBuffer(message.IV);
+
+    const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
+
+    message.content = data;
+
     if (message.senderID == senderID) {
         const senderMessage = document.createElement("div");
         senderMessage.className = "sender-message";
-        senderMessage.textContent = message.encryptedContent;
+        senderMessage.textContent = message.content;
 
         //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
         //Ensures files are not in reverse-order
@@ -52,7 +75,7 @@ export function appendMessage(message, senderID, chatMessages) {
     else if (message.recipientID == senderID) {
         const recipientMessage = document.createElement("div");
         recipientMessage.className = "recipient-message";
-        recipientMessage.textContent = message.encryptedContent;
+        recipientMessage.textContent = message.content;
 
         //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
         //Ensures files are not in reverse-order
@@ -65,57 +88,24 @@ export function appendMessage(message, senderID, chatMessages) {
     }
 };
 
-export function appendImage(file, senderID, chatMessages) {
+export async function appendFile(file, senderID, chatMessages, AESKey) {
 
-    //Assigns correct URL format to output images to HTML in base64
-    const dataURL = `data:${file.dataFormat};base64,${file.encryptedContent}`
-
-    if (file.senderID == senderID) {
-        const senderImage = document.createElement("img");
-        senderImage.className = "sender-file"
-        senderImage.src = dataURL;
-
-        //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
-        //Ensures files are not in reverse-order
-        if (chatMessages.firstChild) {
-            chatMessages.insertBefore(senderImage, chatMessages.firstChild);
-        }
-        else {
-            chatMessages.appendChild(senderImage, chatMessages.firstChild);
-        }
-
+    const bufferContent = await Base64toArrayBuffer(file.content);
+    const bufferIV = await Base64toArrayBuffer(file.IV);
     
-    } else if (file.recipientID == senderID) {
-        const recipientImage = document.createElement("img");
-        recipientImage.className = "recipient-file"
-        recipientImage.src = dataURL;
+    const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
 
-        //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
-        //Ensures messages are not in reverse-order
-        if (chatMessages.firstChild) {
-            chatMessages.insertBefore(recipientImage, chatMessages.firstChild);
-        }
-        else {
-            chatMessages.appendChild(recipientImage, chatMessages.firstChild);
-        }
-    }
-};
-
-export function appendFile(file, senderID, chatMessages) {
+    file.content = data;
 
     //Splits file path from path to file on server to file name user originally proposed, e.g. 'image.png'
     const filePath = file.filePath
     const fileName = (filePath.split("%"))[1];
 
-    //Decodes base64 string to plaintext
-    const plaintext = atob(file.encryptedContent)
+    const plaintext = file.content
 
-    //https://stackoverflow.com/questions/21797299/convert-base64-string-to-arraybuffer
-    //Converts plaintext into 8 bit array of bytes in order to output PDF files correctly
-    const bytes = new Uint8Array(plaintext.length);
-    for (let i = 0; i < plaintext.length; i++) {
-        bytes[i] = plaintext.charCodeAt(i)
-    }
+    //Converts plaintext to array buffer
+    const textEncoder = new TextEncoder();
+    const bytes = textEncoder.encode(plaintext).buffer
 
     let blob;
 
@@ -164,4 +154,49 @@ export function appendFile(file, senderID, chatMessages) {
 
     }
 
+};
+
+export async function appendImage(file, senderID, chatMessages, AESKey) {
+
+    const bufferContent = await Base64toArrayBuffer(file.content);
+    const bufferIV = await Base64toArrayBuffer(file.IV);
+    
+    const data = await encryptionManager.decryptImage(bufferContent.buffer, AESKey, bufferIV);
+
+    const base64Data = await arrayBuffertoBase64(data)
+
+    file.content = base64Data;
+
+    //Assigns correct URL format to output images to HTML in base64
+    const dataURL = `data:${file.dataFormat};base64,${file.content}`
+
+    if (file.senderID == senderID) {
+        const senderImage = document.createElement("img");
+        senderImage.className = "sender-file"
+        senderImage.src = dataURL;
+
+        //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
+        //Ensures files are not in reverse-order
+        if (chatMessages.firstChild) {
+            chatMessages.insertBefore(senderImage, chatMessages.firstChild);
+        }
+        else {
+            chatMessages.appendChild(senderImage, chatMessages.firstChild);
+        }
+
+    
+    } else if (file.recipientID == senderID) {
+        const recipientImage = document.createElement("img");
+        recipientImage.className = "recipient-file"
+        recipientImage.src = dataURL;
+
+        //If pre-existing messages, inserts message at start of HTML code, else pushes message to HTML
+        //Ensures messages are not in reverse-order
+        if (chatMessages.firstChild) {
+            chatMessages.insertBefore(recipientImage, chatMessages.firstChild);
+        }
+        else {
+            chatMessages.appendChild(recipientImage, chatMessages.firstChild);
+        }
+    }
 };

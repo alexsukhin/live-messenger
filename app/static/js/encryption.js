@@ -64,10 +64,25 @@ class EncryptionManager {
 
     }
 
-    async decryptAESKey(AESKey, RSAPrivateKey) {
+    async decryptAESKey(encryptedAESKey, RSAPrivateKey) {
 
-      console.log(AESKey)
-      console.log(RSAPrivateKey) 
+      try {
+      
+      const AESKey = await crypto.subtle.decrypt(
+        {
+          name: "RSA-OAEP"
+        },
+        RSAPrivateKey,
+        encryptedAESKey
+      )
+
+      return AESKey
+
+    } catch (error) {
+        console.error("Error during decryption:", error);
+        throw error;
+    }
+
     }
 
     async encryptData(plaintext, AESKey, IV) {
@@ -97,7 +112,7 @@ class EncryptionManager {
       return encryptedContent
     }
 
-    async encryptImage(plaintext, AESKey, IV) {
+    async encryptFile(plaintext, AESKey, IV) {
 
       const internalAESKey = await crypto.subtle.importKey(
         "raw",
@@ -119,6 +134,58 @@ class EncryptionManager {
       )
 
       return encryptedContent
+    }
+
+    async decryptData(encryptedContent, AESKey, IV) {
+
+      const internalAESKey = await crypto.subtle.importKey(
+        "raw",
+        AESKey,
+        {
+          name: "AES-CBC"
+        },
+        false,
+        ["decrypt"]
+      )
+
+      const decryptedContent = await crypto.subtle.decrypt(
+        {
+          name: "AES-CBC",
+          iv: IV
+        },
+        internalAESKey,
+        encryptedContent
+      )
+
+      const textDecoder = new TextDecoder();
+      const plaintext = textDecoder.decode(decryptedContent);
+
+      return plaintext
+
+    }
+
+    async decryptImage(encryptedContent, AESKey, IV) {
+
+      const internalAESKey = await crypto.subtle.importKey(
+        "raw",
+        AESKey,
+        {
+          name: "AES-CBC"
+        },
+        false,
+        ["decrypt"]
+      )
+
+      const decryptedContent = await crypto.subtle.decrypt(
+        {
+          name: "AES-CBC",
+          iv: IV
+        },
+        internalAESKey,
+        encryptedContent
+      )
+
+      return decryptedContent
     }
 
 

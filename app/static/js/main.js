@@ -1,19 +1,33 @@
-import {getConnectionID, getSessionID, getConversationID, getSenderID, arrayBuffertoBase64, appendMessage, appendImage, appendFile} from "./functions.js";
+import {getConnectionID, getSessionID, getConversationID, getSenderID, arrayBuffertoBase64, Base64toArrayBuffer, appendMessage, appendImage, appendFile} from "./functions.js";
 import {encryptionManager} from "./encryption.js";
 import {openDatabase, saveKey, getPrivateKey} from "./indexeddb.js";
-
-//Opens IndexedDB database
-const dbRequest = openDatabase();
 
 let sessionSocket;
 let AESKey;
 let chatUserElements = [];
+const db = openDatabase();
 
 async function initiateSession(recipientID, conversationID, encryptedAESKey) {
 
     //Inserts a session into sessions database
-    const insertSessionResponse = await fetch(`/insert-session/${conversationID}/${encryptedAESKey}`);
+    //Sends encryptedAESKey as a POST request since it is a base64 string, too long
+    const url = `/insert-session/${conversationID}`
+    const data = {
+        encryptedAESKey : encryptedAESKey
+    }
+
+    const insertSessionResponse = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    }
+    );
+
     const insertSessionData = await insertSessionResponse.json();
+
+    const senderID = await getSenderID();
 
     //Connects and establishes a session websocket for current user
     sessionSocket = io.connect('http://127.0.0.1:5000');
@@ -31,32 +45,57 @@ async function initiateSession(recipientID, conversationID, encryptedAESKey) {
 
     sessionSocket.on('message', async (message) => {
 
-        const senderID = await getSenderID();
+        if (message.senderID == senderID) {
+            console.log("sender message!")
+        } else if (message.senderID == recipientID) {
 
-        const chatMessages = document.getElementById("chatbox-messages");
+            const chatMessages = document.getElementById("chatbox-messages");
 
-        //Appends a message into HTML in real-time
-        appendMessage(message, senderID, chatMessages)
+            const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
+            const base64EncryptedAESKey = await idResponse.json();
+    
+            //Opens IndexedDB database
+    
+    
+            //Gets RSA Private key from IndexedDB Database
+            const RSAPrivateKey = await getPrivateKey(senderID);
+    
+            const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);
+            const AESKey = await encryptionManager.decryptAESKey(encryptedAESKey.buffer, RSAPrivateKey);
+    
+            appendMessage(message, senderID, chatMessages, AESKey);
 
-        
+        }
+    
     })
 
     sessionSocket.on('file', async (file) => {
 
-        console.log(file.encryptedContent)
+        if (message.senderID == senderID) {
+            console.log("sender message!")
+        } else if (message.senderID == recipientID) {
 
-        const senderID = await getSenderID();
+            const chatMessages = document.getElementById("chatbox-messages");
 
-        const chatMessages = document.getElementById("chatbox-messages");
+            const idResponse = await fetch(`get-encrypted-AES-key/${file.sessionID}`);
+            const base64EncryptedAESKey = await idResponse.json();
+    
+            //Gets RSA Private key from IndexedDB Database
+            const RSAPrivateKey = await getPrivateKey(senderID);
+    
+            const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);
+            const AESKey = await encryptionManager.decryptAESKey(encryptedAESKey.buffer, RSAPrivateKey);
+    
+            //Appends a file/message into HTML in real-time
+            if (file.dataFormat == "text/plain" || file.dataFormat == "application/pdf") {
+    
+                appendFile(file, senderID, chatMessages, AESKey)
+                
+            } else if (file.dataFormat == "image/png" || file.dataFormat == "image/jpeg") {
+    
+                appendImage(file, senderID, chatMessages, AESKey)
         
-        //Appends a file/message into HTML in real-time
-        if (file.dataFormat == "text/plain" || file.dataFormat == "application/pdf") {
-
-            appendFile(file, senderID, chatMessages)
-            
-        } else if (file.dataFormat == "image/png" || file.dataFormat == "image/jpeg") {
-
-            appendImage(file, senderID, chatMessages)
+            }
 
         }
     })
@@ -161,11 +200,12 @@ async function updateUser(recipientID) {
         AESKey = await encryptionManager.generateAESKey()
 
         //Fetches public RSA key
-        const idResponse = await fetch(`get-RSA-public-key`);
+        const idResponse = await fetch(`get-RSA-public-key/${recipientID}`);
         const RSAPublicKey = await idResponse.json().then(JSON.parse);
 
         //Encrypts AES key
-        const encryptedAESKey = await encryptionManager.encryptAESKey(AESKey, RSAPublicKey)
+        const encryptedAESKeyBuffer = await encryptionManager.encryptAESKey(AESKey, RSAPublicKey)
+        const encryptedAESKey = await arrayBuffertoBase64(encryptedAESKeyBuffer)
 
         //Checks if a conversation between two users has been created before
         if (!conversationCheckData) {
@@ -207,7 +247,6 @@ document.getElementById("message-form").addEventListener("submit", async event =
     const messageInput = document.getElementById("message");
     const plaintext = messageInput.value;
 
-    const senderID = await getSenderID();
     const recipientID = chatbox.dataset.recipientId;    
 
     const connectionID = await getConnectionID(recipientID);
@@ -220,10 +259,12 @@ document.getElementById("message-form").addEventListener("submit", async event =
 
     const IV = crypto.getRandomValues(new Uint8Array(16));
 
-    const encryptedContent = await encryptionManager.encryptData(plaintext, AESKey, IV)
+    const bufferEncryptedContent = await encryptionManager.encryptData(plaintext, AESKey, IV)
 
-    const base64EncryptedContent = await arrayBuffertoBase64(encryptedContent);
+    const base64EncryptedContent = await arrayBuffertoBase64(bufferEncryptedContent);
     const base64IV = await arrayBuffertoBase64(IV);
+
+    //save message to indexeddb database
 
     //Emits message to flask server
     sessionSocket.emit('message', sessionID, recipientID, base64EncryptedContent, dataFormat, base64IV);
@@ -259,7 +300,7 @@ document.getElementById("file-upload").addEventListener("change", async event =>
         const fileData = data.target.result
 
         //Emits array buffer of bytes to python server
-        const encryptedFileData = await encryptionManager.encryptImage(fileData, AESKey, IV)
+        const encryptedFileData = await encryptionManager.encryptFile(fileData, AESKey, IV)
 
         sessionSocket.emit('file', sessionID, recipientID, encryptedFileData, fileName, dataFormat, base64IV);
     }
@@ -287,7 +328,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const senderID = await getSenderID();
 
-    const idResponse = await fetch(`get-RSA-public-key`);
+    const idResponse = await fetch(`get-RSA-public-key/${senderID}`);
     const RSAPublicKey = await idResponse.json();
 
     //If RSAPublicKey is null, generate RSA keys
@@ -301,11 +342,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const insertResponseData = await insertRSAResponse.json();
         console.log(insertResponseData);
 
-        //Inserts private RSA key in IndexedDB Database
-        dbRequest.onsuccess = (event) => {
-            const db = event.target.result;
-            saveKey(keyPair.privateKey, senderID, db)
-        }
+        //Opens IndexedDB database
+
+        //Inserts sender private RSA key in IndexedDB Database
+        await saveKey(keyPair.privateKey, senderID)
 
         console.log("No public key")
     } else {
@@ -350,38 +390,67 @@ document.addEventListener("DOMContentLoaded", async () => {
         const chatMessages = document.getElementById("chatbox-messages");
         chatMessages.innerHTML = ""
 
+        const AESKeyDict = new Map();
+
         //Gets list of all chat messages in a data variable via JSON
         const response = await fetch(`/get-chat-messages/${recipientID}`);
         const data = await response.json();
 
         //decrypt all messages in future
 
-        //Loops through all messages and pushes them to HTML, outputting to user's screen
-        data.forEach(async (message) => {
+        //Loops through all messages synchronously and pushes them to HTML, outputting to user's screen
+        for (const message of data) {
 
-            const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
-            const encryptedAESKey = await idResponse.json()
-            console.log(encryptedAESKey)
-            //next create decryption algorithm, see if it outputs different aes keys
+            if (message.senderID == senderID) {
+                console.log("sender message!")
+            } else if (message.senderID == recipientID) {
+                console.log("recipient message!")
+
+                const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
+                const base64EncryptedAESKey = await idResponse.json();
+    
+                if (AESKeyDict.has(base64EncryptedAESKey)) {
+                    const AESKey = AESKeyDict.get(base64EncryptedAESKey)
+    
+                    processMessage(AESKey, message)
+                } else {
+    
+                    //Gets RSA Private key from IndexedDB Database
+                    const RSAPrivateKey = await getPrivateKey(senderID);
+    
+                    const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);
+                    const AESKey = await encryptionManager.decryptAESKey(encryptedAESKey.buffer, RSAPrivateKey);
+    
+                    AESKeyDict.set(base64EncryptedAESKey, AESKey)
+    
+                    processMessage(AESKey, message)
+    
+    
+                }
+            }
             
+        };
 
+        async function processMessage(AESKey, message) {
 
             if (message.dataFormat == "text/short") {
 
-                appendMessage(message, senderID, chatMessages)
-                
-            } else if (message.dataFormat == "text/plain" || message.dataFormat == "application/pdf") {
+                    appendMessage(message, senderID, chatMessages, AESKey);
 
-                appendFile(message, senderID, chatMessages)
+            } else if (message.dataFormat == "text/plain" || message.dataFormat == "application/pdf") {
+        
+                    appendFile(message, senderID, chatMessages, AESKey)
 
             } else if (message.dataFormat == "image/png" || message.dataFormat == "image/jpeg") {
-                
-                appendImage(message, senderID, chatMessages)
+
+                    appendImage(message, senderID, chatMessages, AESKey)
 
             } else {
                 console.log("Invalid file type")
             }
-        });
+
+
+        }
     
     });
     

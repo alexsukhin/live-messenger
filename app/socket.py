@@ -40,7 +40,7 @@ class ChatSocketIO(SocketIO):
                 "sessionID": sessionID,
                 "senderID": senderID,
                 "recipientID": recipientID,
-                "encryptedContent": encryptedContent,
+                "content": encryptedContent,
                 "IV": IV
             }
 
@@ -61,7 +61,8 @@ class ChatSocketIO(SocketIO):
         #Encodes array buffer to base 64 string
         #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
         base64Data = base64.b64encode(encryptedContent).decode('utf-8')
-
+        
+        #encrypted content is array buffer, base64 data is base 64 string
         if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
             #Try to output real encrypted image
             with open(filePath, "wb") as file:
@@ -71,7 +72,7 @@ class ChatSocketIO(SocketIO):
                 "sessionID": sessionID,
                 "senderID": senderID,
                 "recipientID": recipientID,
-                "encryptedContent": base64Data,
+                "content": base64Data,
                 "filePath" : filePath,
                 "dataFormat": dataFormat,
                 "IV": IV
@@ -126,10 +127,9 @@ socketio.on_event('increment-notification', socketio.increment_notification_coun
 #i will implement other encryptions to represent the algorithm part
 
 #stored rsa keys, tmrw implement aes and rsa encryption
-#1st and 2nd implement other encryptions
-#3rd do option deciding which encryption & possibly documentation
+#2nd and 3rd implement other encryptions, decide which encryptions option
 
-#1st finish aes rsa
+#I finished AES-RSA encryption/decryption, make code cleaner, do comments, figure out double problem
 #2nd implement other encryption
 #3rd do option deciding which encryption
 #4th and 5th documentation

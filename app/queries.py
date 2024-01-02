@@ -299,7 +299,7 @@ def getChatMessages(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql="""SELECT SessionID, SenderID, RecipientID, EncryptedContent, FilePath, DataFormat FROM messages
+    sql="""SELECT SessionID, SenderID, RecipientID, EncryptedContent, FilePath, DataFormat, IV FROM messages
     WHERE (SenderID = %s AND RecipientID = %s)
     OR (SenderID = %s AND RecipientID = %s)
     ORDER BY Timestamp ASC;"""
@@ -317,10 +317,12 @@ def getChatMessages(senderID, recipientID):
             "sessionID": message[0],
             "senderID": message[1],
             "recipientID" : message[2],
-            "encryptedContent": message[3],
+            "content": message[3],
             "filePath": message[4],
-            "dataFormat": message[5]
+            "dataFormat": message[5],
+            "IV": message[6]
         }
+        
         
         messagesList.append(messageDict)
 

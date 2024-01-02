@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from .queries import *
 import base64
@@ -10,11 +10,15 @@ views = Blueprint("views", __name__)
 #Encrypted data is stored in routes
 
 #HTML route for inserting a new session into sessions database
-@views.route("/insert-session/<conversationID>/<encryptedAESKey>")
+@views.route("/insert-session/<conversationID>", methods=["POST"])
 @login_required
-def insert_session(conversationID, encryptedAESKey):
-    print(encryptedAESKey)
+def insert_session(conversationID):
+
+    data = request.get_json()
+    encryptedAESKey = data.get("encryptedAESKey")
+
     insertSession(conversationID, encryptedAESKey)
+
     return jsonify({"message": "Session inserted successfully"})
 
 #HTML route for inserting a new conversation into conversations database
@@ -88,7 +92,7 @@ def get_chat_messages(recipientID):
 
                 #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
                 base64Data = base64.b64encode(encryptedContent).decode("utf-8")
-                message["encryptedContent"] = base64Data
+                message["content"] = base64Data
 
 
     return jsonify(messages)
@@ -101,18 +105,17 @@ def get_chat_users():
     return jsonify(chatUsers)
 
 
-@views.route("/get-RSA-public-key")
+@views.route("/get-RSA-public-key/<recipientID>")
 @login_required
-def get_RSA_public_key():
-    RSAPublicKey = getRSAPublicKey(current_user.id)
+def get_RSA_public_key(recipientID):
+    RSAPublicKey = getRSAPublicKey(recipientID)
+    print(RSAPublicKey)
     return jsonify(RSAPublicKey[0])
 
-@views.route("/get-encrypted-AES-key/<sessionID>")
+@views.route("/get-encrypted-AES-key/<userID>")
 @login_required
-def get_encrypted_AES_key(sessionID):
-    encryptedAESKey = getEncryptedAESKey(sessionID)    
+def get_encrypted_AES_key(userID):
+    encryptedAESKey = getEncryptedAESKey(userID)
 
-    #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
-    base64Key = base64.b64encode(encryptedAESKey).decode("utf-8")
-
-    return jsonify(base64Key)
+    #Sends encryptedAESKey as a base64 string
+    return jsonify(encryptedAESKey)
