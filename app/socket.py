@@ -4,6 +4,7 @@ from .queries import insertMessage, insertFile, incrementNotificationCounter, re
 import base64
 from datetime import datetime
 
+
 class ChatSocketIO(SocketIO):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -120,9 +121,6 @@ socketio.on_event('increment-notification', socketio.increment_notification_coun
 #start technical solution after holiday or before if time
 
 #i will implement other encryptions to represent the algorithm part
-
-#stored rsa keys, tmrw implement aes and rsa encryption
-#2nd and 3rd implement other encryptions, decide which encryptions option
 
 #3rd implement other encryptions, option deciding which encryptions to do
 #4th and 5th documentation

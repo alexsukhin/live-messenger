@@ -38,6 +38,7 @@ export async function getEncryptedAESKeys(sessionID) {
 };
 
 export async function decryptBase64Key(senderID, base64EncryptedAESKey) {
+
     //Gets RSA Private key from IndexedDB Database
     const RSAPrivateKey = await getPrivateKey(senderID);
     const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);

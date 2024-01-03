@@ -35,6 +35,20 @@ def update_RSA_public_key(publicRSAKey):
     updateRSAPublicKey(current_user.id, publicRSAKey)
     return jsonify({"message": "Updated public RSA key successfully"})
 
+#HTML route for updating the timestamp in conversations database
+@views.route("/update-RSA-private-key/<privateRSAKey>")
+@login_required
+def update_RSA_private_key(privateRSAKey):
+    updateRSAPrivateKey(current_user.id, privateRSAKey)
+    return jsonify({"message": "Updated private RSA key successfully"})
+
+#HTML route for updating the timestamp in conversations database
+@views.route("/update-RSA-private-key-NULL")
+@login_required
+def update_RSA_private_key_NULL():
+    updateRSAPrivateKeyNULL(current_user.id)
+    return jsonify({"message": "Reset private RSA key to NULL"})
+
 @views.route("/update-conversation/<conversationID>")
 @login_required
 def update_conversation(conversationID):
@@ -105,12 +119,17 @@ def get_chat_users():
     return jsonify(chatUsers)
 
 
-@views.route("/get-RSA-public-key/<recipientID>")
+@views.route("/get-RSA-public-key/<userID>")
 @login_required
-def get_RSA_public_key(recipientID):
-    RSAPublicKey = getRSAPublicKey(recipientID)
-    print(RSAPublicKey)
+def get_RSA_public_key(userID):
+    RSAPublicKey = getRSAPublicKey(userID)
     return jsonify(RSAPublicKey[0])
+
+@views.route("/get-RSA-private-key")
+@login_required
+def get_RSA_private_key():
+    RSAPrivateKey = getRSAPrivateKey(current_user.id)
+    return jsonify(RSAPrivateKey[0])
 
 @views.route("/get-encrypted-AES-key/<userID>")
 @login_required

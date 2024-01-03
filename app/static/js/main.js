@@ -181,21 +181,25 @@ async function initiateSession(recipientID, conversationID, senderEncryptedAESKe
 
 
     sessionSocket.on('message', async (message) => {
-
-        console.log("hello")
-
         const chatMessages = document.getElementById("chatbox-messages");
         //Gets dictionary of encrypted AES keys
         const base64EncryptedAESKeys = await getEncryptedAESKeys(message.sessionID);
 
+        console.log(message.senderID)
+
+
         if (message.senderID == senderID) {
 
-            //Gets sender encrypted AES key from dictionary and decrypts AES key
-            const base64EncryptedAESKey = await base64EncryptedAESKeys.senderEncryptedAESKey
-            const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
+            try {
+                //Gets sender encrypted AES key from dictionary and decrypts AES key
+                const base64EncryptedAESKey = await base64EncryptedAESKeys.senderEncryptedAESKey
+                const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
 
-            appendMessage(message, senderID, chatMessages, AESKey);
+                appendMessage(message, senderID, chatMessages, AESKey);
 
+            } catch (error) {
+                console.error('Error:', error);
+            }
         } else if (message.senderID == recipientID) {
 
             //Gets recipient encrypted AES key from dictionary and decrypts AES key
@@ -205,6 +209,7 @@ async function initiateSession(recipientID, conversationID, senderEncryptedAESKe
             appendMessage(message, senderID, chatMessages, AESKey);
 
         }
+
     
     })
 
@@ -326,7 +331,7 @@ document.getElementById("file-upload").addEventListener("change", async event =>
         const fileData = data.target.result;
         const encryptedFileData = await encryptionManager.encryptFile(fileData, AESKey, IV);
 
-        //Emits encrypted rray buffer of bytes to python server
+        //Emits encrypted array buffer of bytes to python server
         sessionSocket.emit('file', sessionID, recipientID, encryptedFileData, fileName, dataFormat, base64IV);
 
         
@@ -360,20 +365,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     const idResponse = await fetch(`get-RSA-public-key/${senderID}`);
     const RSAPublicKey = await idResponse.json();
 
+    const RSAPrivateKey = await getPrivateKey(senderID);
+    console.log('hello')
+    console.log(RSAPrivateKey)
+
     //This code below to generate RSA key pairs is run only once once a user creates their account
     //If RSAPublicKey is null, generate RSA keys
-    if (RSAPublicKey == null) {
+    if (RSAPrivateKey == null) {
 
         //Gets key pair for RSA encryption
         const keyPair = await encryptionManager.generateRSAKeyPair();
 
-        //Updates public RSA key in users database
-        const insertRSAResponse = await fetch(`/update-RSA-public-key/${keyPair.publicKey}`);
-        const insertResponseData = await insertRSAResponse.json();
-        console.log(insertResponseData);
+        
+        if (RSAPublicKey == null) {
+            //Updates public RSA key in users database
+            const insertPublicRSAResponse = await fetch(`/update-RSA-public-key/${keyPair.publicKey}`);
+            const insertPublicResponseData = await insertPublicRSAResponse.json();
+            console.log(insertPublicResponseData);
 
-        //Inserts sender private RSA key in IndexedDB Database
-        await saveKey(keyPair.privateKey, senderID)
+            //Inserts sender private RSA key in IndexedDB Database
+            await saveKey(keyPair.privateKey, senderID)
+
+            //Updates private RSA key in users database - for test purposes
+            const privateRSAKeyJWK = await encryptionManager.exportPrivateKey(keyPair.privateKey)
+
+            const insertPrivateRSAResponse = await fetch(`/update-RSA-private-key/${privateRSAKeyJWK}`);
+            const insertPrivateResponseData = await insertPrivateRSAResponse.json();
+
+
+        //Algorithm implemented for test purposes
+        } else {
+            const RSAPrivateKeyResponse = await fetch(`get-RSA-private-key`);
+            const RSAPrivateKeyData = await RSAPrivateKeyResponse.json().then(JSON.parse);
+
+            const RSAPrivateKey = await encryptionManager.importPrivateKey(RSAPrivateKeyData)
+
+            await saveKey(RSAPrivateKey, senderID)
+        }
 
         console.log("No public key");
     } else {
@@ -454,6 +482,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);
                 
                 const AESKey = await encryptionManager.decryptAESKey(encryptedAESKey.buffer, RSAPrivateKey);
+
 
                 //Pushes decrypted AES key to map
                 AESKeyDict.set(base64EncryptedAESKey, AESKey);

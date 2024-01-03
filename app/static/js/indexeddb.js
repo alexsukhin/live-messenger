@@ -59,6 +59,8 @@ export function saveKey(RSAPrivateKey, userID) {
     
         addRequest.onsuccess = (event) => {
             console.log("Private key saved successfully:", event.target.result);
+
+
             resolve(event.target.result);
         };
     
@@ -91,7 +93,13 @@ export function getPrivateKey(userID) {
 
         getRequest.onsuccess = (event) => {
             const privateKey = event.target.result;
-            resolve(privateKey.RSAPrivateKey);
+
+            if (privateKey == undefined) {
+                resolve(null)
+            } else {
+                resolve(privateKey.RSAPrivateKey);
+            }
+
         };
 
         getRequest.onerror = (event) => {

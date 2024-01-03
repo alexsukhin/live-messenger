@@ -21,6 +21,31 @@ class EncryptionManager {
         return {publicKey: JSON.stringify(publicKey), privateKey: keyPair.privateKey}
     }
 
+    async exportPrivateKey(RSAPrivateKey) {
+
+      const privateKey = await crypto.subtle.exportKey("jwk", RSAPrivateKey)
+      return JSON.stringify(privateKey)
+
+    }
+
+    async importPrivateKey(RSAPrivateKey) {
+
+      const internalRSAPrivateKey = await crypto.subtle.importKey(
+        "jwk",
+        RSAPrivateKey,
+        {
+          name: "RSA-OAEP",
+          hash: "SHA-256"
+        },
+        false,
+        ["decrypt"]
+      )
+
+      return internalRSAPrivateKey
+
+    }
+
+
     async generateAESKey() {
       const AESKey = await crypto.subtle.generateKey(
         {
@@ -38,6 +63,8 @@ class EncryptionManager {
     }
 
     async encryptAESKey(AESKey, RSAPublicKey) {
+
+      console.log('public key:', RSAPublicKey)
       
       //Converts jwk format into internal crypto web object for encryption
       const internalRSAPublicKey = await crypto.subtle.importKey(
@@ -64,21 +91,22 @@ class EncryptionManager {
 
     }
 
-    async decryptAESKey(encryptedAESKey, RSAPrivateKey) {
+      async decryptAESKey(encryptedAESKey, RSAPrivateKey) {
 
-      
-      //Decrypts AES key with private RSA key
-      const AESKey = await crypto.subtle.decrypt(
-        {
-          name: "RSA-OAEP"
-        },
-        RSAPrivateKey,
-        encryptedAESKey
-      )
+        //Decrypts AES key with private RSA key
+        const AESKey = await crypto.subtle.decrypt(
+          {
+            name: "RSA-OAEP"
+          },
+          RSAPrivateKey,
+          encryptedAESKey
+        )
 
-      return AESKey
 
-    }
+        return AESKey
+
+
+      }
 
     async encryptData(plaintext, AESKey, IV) {
 

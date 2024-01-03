@@ -142,6 +142,32 @@ def updateRSAPublicKey(userID, publicRSAKey):
     conn.commit()
     cursor.close()
 
+def updateRSAPrivateKey(userID, privateRSAKey):
+    
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET PrivateRSAKey = %s WHERE UserID = %s;"
+    values = (privateRSAKey, userID)
+    cursor.execute(sql, values)
+    
+    conn.commit()
+    cursor.close()
+
+def updateRSAPrivateKeyNULL(userID):
+
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET PrivateRSAKey = NULL WHERE UserID = %s;"
+    values = (userID)
+    cursor.execute(sql, values)
+    
+    conn.commit()
+    cursor.close()
+
+    
+
 #Updates the timestamp in conversations database
 def updateConversation(conversationID):
     conn = mysql.connection
@@ -376,6 +402,22 @@ def getRSAPublicKey(userID):
     cursor.close()
 
     return RSAPublicKey
+
+#Gets RSA Public key from users database
+def getRSAPrivateKey(userID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT PrivateRSAKey FROM users WHERE UserID = %s
+    """
+    cursor.execute(sql, (userID,))
+    RSAPrivateKey = cursor.fetchone()
+
+    cursor.close()
+
+    return RSAPrivateKey
+
 
 #Gets encrypted AES keys from sessions database
 def getEncryptedAESKey(sessionID):
