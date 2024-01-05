@@ -82,7 +82,7 @@ async function updateUser(recipientID) {
 
     const senderID = await getSenderID();
     const connectionID = await getConnectionID(recipientID);
-
+    
     //Checks if there is a connection between two users
     if (connectionID !== null) {
 
@@ -110,6 +110,14 @@ async function updateUser(recipientID) {
         //Checks if a conversation between two users has been created before
         if (!conversationCheckData) {
 
+            //if user1 and user2 XOR encryption mode:
+            //if sender hashed password null and recipient password null
+            //sender enter password, initates conversation with hashedpassword
+            //else if sender hashed password null and recipient password not null
+            //sender enter password, check if same as user1,  if not same re enter, initates conversation with hashedpassword if same
+            //if both not null
+            //dont change database
+
             //Inserts a conversation into database if there is not a conversation
             const insertConversationResponse = await fetch(`/insert-conversation/${connectionID}`);
             const insertConversationData = await insertConversationResponse.json();
@@ -123,6 +131,14 @@ async function updateUser(recipientID) {
         } else {
 
             const conversationID = await getConversationID(connectionID);
+
+            //if user1 and user2 XOR encryption mode:
+            //if sender hashed password null and recipient password null
+            //sender enter password, update conversation with hashed password
+            //else if sender hashed password null and recipient password not null
+            //sender enter password, check if same as recipient, if not same re enter, update conversation with hashed password if same
+            //if both not null
+            //dont update
             
             //Updates the conversation timestamp if there is already a conversation in database
             const updateConversationResponse = await fetch(`update-conversation/${conversationID}`)
@@ -184,9 +200,6 @@ async function initiateSession(recipientID, conversationID, senderEncryptedAESKe
         const chatMessages = document.getElementById("chatbox-messages");
         //Gets dictionary of encrypted AES keys
         const base64EncryptedAESKeys = await getEncryptedAESKeys(message.sessionID);
-
-        console.log(message.senderID)
-
 
         if (message.senderID == senderID) {
 
@@ -288,6 +301,24 @@ document.getElementById("message-form").addEventListener("submit", async event =
     //Randomly generates IV
     const IV = crypto.getRandomValues(new Uint8Array(16));
 
+
+    
+    //If user1 and user2 use XOR Encryption and user1 hashedpassword not null and user2 hashed password not null:
+    //get hashedpassword from database and use xor encryption
+    //have to implement database query to get hashedpassword and to check if xor encryption
+    //have to do some html stuff
+    const hashedPassword = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    
+    const ArrayXORKey = await encryptionManager.deriveXORKey(hashedPassword, salt.buffer)
+    
+    const encryptedData = await encryptionManager.CBCEncrypt(plaintext, ArrayXORKey, IV)
+
+    //const data = await encryptionManager.CBCDecrypt(encryptedData, ArrayXORKey, IV)
+
+
+
+
     //Encrypts plaintext with global AES key
     const bufferEncryptedContent = await encryptionManager.encryptData(plaintext, AESKey, IV);
 
@@ -328,7 +359,11 @@ document.getElementById("file-upload").addEventListener("change", async event =>
     const reader = new FileReader();
 
     reader.onload = async (data) => {
-        const fileData = data.target.result;
+        const fileData = data.target.result;    
+
+        //const test = await arrayBuffertoBase64(fileData)
+        //console.log('before', atob(test)) data not corrupted yet
+
         const encryptedFileData = await encryptionManager.encryptFile(fileData, AESKey, IV);
 
         //Emits encrypted array buffer of bytes to python server
@@ -366,8 +401,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const RSAPublicKey = await idResponse.json();
 
     const RSAPrivateKey = await getPrivateKey(senderID);
-    console.log('hello')
-    console.log(RSAPrivateKey)
 
     //This code below to generate RSA key pairs is run only once once a user creates their account
     //If RSAPublicKey is null, generate RSA keys

@@ -63,13 +63,14 @@ class ChatSocketIO(SocketIO):
 
         #Encodes array buffer to base 64 string
         #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
-        base64Data = base64.b64encode(encryptedContent).decode('utf-8')
+        base64Data = base64.b64encode(encryptedContent)
+        print('base64', base64Data)
         
         #encrypted content is array buffer, base64 data is base 64 string
         if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
             #Try to output real encrypted image
             with open(filePath, "wb") as file:
-                file.write(encryptedContent)
+                file.write(encryptedContent)    
 
             file = {
                 "sessionID": sessionID,
@@ -116,12 +117,10 @@ socketio.on_event('reset-notification', socketio.reset_notification_counter)
 socketio.on_event('increment-notification', socketio.increment_notification_counter)
 
 
-#implement encryption, possibly multiple encryptions - not sure how long, give myself 5 days
 #update analysis, design
-#start technical solution after holiday or before if time
+#start technical solution after holiday
 
 #i will implement other encryptions to represent the algorithm part
 
-#3rd implement other encryptions, option deciding which encryptions to do
-#4th and 5th documentation
-#6-8 revise physics, anki, maths
+#5th try finish implementation, do documentation
+#6-8 revise physics, anki, maths, if finish do documentation maybe on 8th do physics, can also do next week

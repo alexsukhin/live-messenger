@@ -109,7 +109,7 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
 
     const bufferContent = await Base64toArrayBuffer(file.content);
     const bufferIV = await Base64toArrayBuffer(file.IV);
-    
+
     const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
 
     file.content = data;
@@ -122,6 +122,7 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
 
     //Converts plaintext to array buffer
     const textEncoder = new TextEncoder();
+    console.log('after', plaintext)
     const bytes = textEncoder.encode(plaintext).buffer
 
     let blob;
@@ -132,6 +133,8 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
     } else if (file.dataFormat == "application/pdf") {
         blob = new Blob([bytes], {type: "application/pdf"});
     }   
+
+    console.log('blob', blob)
     
     if (file.senderID == senderID) {
 

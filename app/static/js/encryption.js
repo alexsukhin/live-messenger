@@ -221,6 +221,114 @@ class EncryptionManager {
       return decryptedContent
     }
 
+    async deriveXORKey(password, salt) {
+
+      const textEncoder = new TextEncoder();
+      const arrayPassword = textEncoder.encode(password);
+
+      const internalPassword = await crypto.subtle.importKey(
+        'raw',
+        arrayPassword.buffer,
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits', 'deriveKey']
+      );
+
+      const arrayDerivedKey = await crypto.subtle.deriveBits(
+        {
+          name: 'PBKDF2',
+          salt: salt,
+          iterations: 10000,
+          hash: 'SHA-256',
+        },
+        internalPassword,
+        128 // Adjust the number of bits as needed
+      );
+
+      return arrayDerivedKey
+      
+    }
+
+    //Pad using PCKS#7 padding
+    async padUint8Array(Uint8Data) { 
+      const padLength = 16 - (Uint8Data.length % 16);
+      const padData = new Uint8Array(Uint8Data.length + padLength)
+      padData.set(Uint8Data)
+
+      for (let i = Uint8Data.length; i < padData.length; i++) {
+        padData[i] = padLength;
+      }
+
+      return padData;
+    }
+
+    //Unpad using PCKS#7 padding
+    async unpadUint8Array(padData) {
+      const padLength = padData[padData.length - 1];
+      const originalLength = padData.length - padLength;
+
+      return padData.slice(0, originalLength);
+    }
+
+    async XORCipher(Uint8Data, XORKey) {
+
+      const Uint8Key = new Uint8Array(XORKey)
+
+      const result = new Uint8Array(Uint8Data.length)
+
+      for (let i = 0; i < Uint8Data.length; i++) {
+        result[i] = Uint8Data[i] ^ Uint8Key[i % Uint8Data.length];
+      }
+
+      return result
+    } 
+
+    async CBCEncrypt(plaintext, XORKey, IV) {
+
+      const textEncoder = new TextEncoder();
+      const Uint8Data = await encryptionManager.padUint8Array(textEncoder.encode(plaintext));
+
+      let result = "";
+      let previousBlock = IV;
+
+      for (let i = 0; i < Uint8Data.length; i += 16) {
+        
+        const currentBlock = Uint8Data.slice(i, i + 16)
+        const XORBlock = await encryptionManager.XORCipher(currentBlock, previousBlock)
+        const encryptedBlock = await encryptionManager.XORCipher(XORBlock, XORKey)
+
+        result += encryptedBlock;
+        previousBlock = encryptedBlock;
+      }
+
+      return result
+    }
+
+      // CBC Decryption
+    async CBCDecrypt(ciphertext, XORKey, IV) {  
+
+    const dataArray = ciphertext.split(",").map(Number)
+    const Uint8Data = new Uint8Array(dataArray);
+  
+    let result = "";
+    let previousBlock = IV;
+
+    for (let i = 0; i < ciphertext.length; i += 16) {
+      const currentBlock = Uint8Data.slice(i, i + 16);
+      const decryptedBlock = await encryptionManager.XORCipher(currentBlock, XORKey)
+      const XORBlock = await encryptionManager.XORCipher(decryptedBlock, previousBlock)
+
+      result += XORBlock;
+      previousBlock = currentBlock;
+    } 
+
+    
+    const resultArray = result.split(",").map(Number)
+    const Uint8Result = new Uint8Array(resultArray);
+
+    return Uint8Result;
+
+    }
 
 }
 
