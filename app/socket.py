@@ -55,7 +55,7 @@ class ChatSocketIO(SocketIO):
         self.emit_message("message", message, f"room_{recipientID}_{senderID}")
 
 
-    def handle_file(self, sessionID, recipientID, encryptedContent, fileName, dataFormat, IV):
+    def handle_file(self, sessionID, recipientID, encryptedContent, fileName, dataFormat, cipher, IV, salt):
         senderID = current_user.id
 
         #Creates unique identifier for file name based on current time
@@ -65,15 +65,14 @@ class ChatSocketIO(SocketIO):
         #Sets file path location for server storage
         filePath = "D:\\Live Messenger\\files\\" + fileName
 
-        #Encodes array buffer to base 64 string
-        #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
+
         base64Data = base64.b64encode(encryptedContent).decode()
 
         #encrypted content is array buffer, base64 data is base 64 string
-        if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
+        if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, cipher, IV, salt):
             #Try to output real encrypted image
             with open(filePath, "wb") as file:
-                file.write(encryptedContent)    
+                file.write(encryptedContent)
 
             file = {
                 "sessionID": sessionID,
@@ -82,7 +81,9 @@ class ChatSocketIO(SocketIO):
                 "content": base64Data,
                 "filePath" : filePath,
                 "dataFormat": dataFormat,
-                "IV": IV
+                "cipher": cipher,
+                "IV": IV,
+                "salt": salt
             }
 
             #Emits message to both sender and recipient if they are online
@@ -118,15 +119,3 @@ socketio.on_event('message', socketio.handle_message)
 socketio.on_event('file', socketio.handle_file)
 socketio.on_event('reset-notification', socketio.reset_notification_counter)
 socketio.on_event('increment-notification', socketio.increment_notification_counter)
-
-
-#update analysis, design
-#start technical solution after holiday
-
-#i will implement other encryptions to represent the algorithm part
-
-#5th try finish implementation, do documentation
-#6-8 revise physics, anki, maths, if finish do documentation maybe on 8th do physics, can also do next week
-#tmrw - completely finish up implementation, do anki, then do documentation clean up code, comments
-#sunday - physics and maths
-#monday - physics and maths

@@ -51,12 +51,12 @@ def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat
     return True
 
 #Inserts a new file into messages database
-def insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
+def insertFile(sessionID, senderID, recipientID, filePath, dataFormat, cipher, IV, salt):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, FilePath, DataFormat, IV) VALUES (%s, %s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, filePath, dataFormat, IV)
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, FilePath, DataFormat, Cipher, IV, Salt) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, filePath, dataFormat, cipher, IV, salt)
     cursor.execute(sql, values)
 
     conn.commit()

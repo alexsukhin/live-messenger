@@ -1,4 +1,4 @@
-import {getConnectionID, getSessionID, getConversationID, getSenderID, getEncryptedAESKeys, decryptBase64Key, arrayBuffertoBase64, Base64toArrayBuffer, updateXORPassword, appendMessage, appendImage, appendFile} from "./functions.js";
+import {getConnectionID, getSessionID, getConversationID, getSenderID, getCiphers, getHashedPasswords, getEncryptedAESKeys, decryptBase64Key, arrayBuffertoBase64, Base64toArrayBuffer, updateXORPassword, appendMessage, appendImage, appendFile} from "./functions.js";
 import {encryptionManager} from "./encryption.js";
 import {openDatabase, saveKey, getPrivateKey} from "./indexeddb.js";
 
@@ -81,11 +81,8 @@ async function updateUser(recipientID) {
     }
 
     const senderID = await getSenderID();
-    const connectionIDs = await getConnectionID(recipientID);
-    const senderConnectionID = connectionIDs[0][0]
-    const recipientConnectionID = connectionIDs[1][0]
+    const {senderConnectionID, recipientConnectionID} = await getConnectionID(recipientID);
 
-    console.log(senderConnectionID, recipientConnectionID)
     
     //Checks if there is a connection between two users
     if (senderConnectionID !== null) {
@@ -124,6 +121,7 @@ async function updateUser(recipientID) {
             const senderConversationID = await getConversationID(senderConnectionID);
             const recipientConversationID = await getConversationID(recipientConnectionID);
 
+            //Allows user to enter XOR password if both user's have XOR enabled
             await updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID);
 
             //Inserts a session into database and establishes websocket
@@ -134,12 +132,13 @@ async function updateUser(recipientID) {
             const senderConversationID = await getConversationID(senderConnectionID);
             const recipientConversationID = await getConversationID(recipientConnectionID);
 
-            await updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID);
-
             //Updates the conversation timestamp if there is already a conversation in database
             const updateConversationResponse = await fetch(`update-conversation/${senderConversationID}`)
             const updateConversationData = await updateConversationResponse.json();
             
+            //Allows user to enter XOR password if both user's have XOR enabled
+            await updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID);
+
             //Inserts a session into database and establishes websocket
             initiateSession(recipientID, senderConversationID, senderEncryptedAESKey, recipientEncryptedAESKey);
 
@@ -193,8 +192,6 @@ async function initiateSession(recipientID, conversationID, senderEncryptedAESKe
 
 
     sessionSocket.on('message', async (message) => {
-
-        console.log(message.content)
 
         const chatMessages = document.getElementById("chatbox-messages");
         //Gets dictionary of encrypted AES keys
@@ -290,47 +287,39 @@ if (window.location.pathname == "/dashboard") {
 
         const senderID = await getSenderID();
         const recipientID = chatbox.dataset.recipientId;    
-    
-        const connectionIDs = await getConnectionID(recipientID);
-        const senderConnectionID = connectionIDs[0][0]
-        const recipientConnectionID = connectionIDs[1][0]
+
+        const {senderConnectionID, recipientConnectionID} = await getConnectionID(recipientID);
         const senderConversationID = await getConversationID(senderConnectionID);
         const recipientConversationID = await getConversationID(recipientConnectionID);
         const sessionID = await getSessionID(senderConversationID);
     
-        const senderCipherResponse = await fetch(`get-cipher/${senderID}`);
-        const senderCipherData = await senderCipherResponse.json()
-        
-        const recipientCipherResponse = await fetch(`get-cipher/${recipientID}`);
-        const recipientCipherData = await recipientCipherResponse.json()
-
-        const senderHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
-        const senderHashedPassword = await senderHashedPasswordResponse.json()
-
-        const recipientHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${recipientConversationID}`);
-        const recipientHashedPassword = await recipientHashedPasswordResponse.json()
+        const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
+        const {senderHashedPassword, recipientHashedPassword} = await getHashedPasswords(senderConversationID, recipientConversationID)
 
         //Randomly generates IV
         const IV = crypto.getRandomValues(new Uint8Array(16));
         const base64IV = await arrayBuffertoBase64(IV);
 
 
-        if (senderCipherData == "XOR" && recipientCipherData == "XOR") {
+        if (senderCipher == "XOR" && recipientCipher == "XOR") {
             if (senderHashedPassword !== null && recipientHashedPassword !== null) {
                 const salt = crypto.getRandomValues(new Uint8Array(16));
                 const base64Salt = await arrayBuffertoBase64(salt.buffer);
                 const cipher = "XOR";
                 
                 const textEncoder = new TextEncoder();
+                //Pads data array with PCKS#7 padding
                 const Uint8Data = await encryptionManager.padUint8Array(textEncoder.encode(plaintext));
 
+                //Derives XOR key from hashed password and message salt
                 const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, salt.buffer)
+
+                //Encrypts data using CBC decryption and converts data to array buffer
                 const encryptedContent = await encryptionManager.CBCEncrypt(Uint8Data, ArrayXORKey, IV)
 
                 //Emits message to flask server
                 sessionSocket.emit('message', sessionID, recipientID, encryptedContent, dataFormat, cipher, base64IV, base64Salt);
     
-
             }
         } else {
             const salt = null;
@@ -361,34 +350,60 @@ if (window.location.pathname == "/dashboard") {
         const file = fileInput.files[0];
         const fileName = file.name;
     
+        const senderID = await getSenderID();
         const recipientID = chatbox.dataset.recipientId;
     
-        const connectionIDs = await getConnectionID(recipientID);
-        const connectionID = connectionIDs[0][0]
-        const conversationID = await getConversationID(connectionID);
-        const sessionID = await getSessionID(conversationID);
+        const {senderConnectionID, recipientConnectionID} = await getConnectionID(recipientID);
+        const senderConversationID = await getConversationID(senderConnectionID);
+        const recipientConversationID = await getConversationID(recipientConnectionID);
+        const sessionID = await getSessionID(senderConversationID);
+
+        const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
+        const {senderHashedPassword, recipientHashedPassword} = await getHashedPasswords(senderConversationID, recipientConversationID)
     
-        
         //Randomly generates IV and converts to base64 string
         const IV = crypto.getRandomValues(new Uint8Array(16));
         const base64IV = await arrayBuffertoBase64(IV);
     
         const dataFormat = file.type;
+        //Represents accepted format types
         const acceptedFormat = ["text/plain", "application/pdf", "image/png", "image/jpeg"];
     
         const reader = new FileReader();
     
         reader.onload = async (data) => {
-            const fileData = data.target.result;    
-    
-            const test = await arrayBuffertoBase64(fileData)
-    
-            const encryptedFileData = await encryptionManager.encryptFile(fileData, AESKey, IV);
-    
-            //Emits encrypted array buffer of bytes to python server
-            sessionSocket.emit('file', sessionID, recipientID, encryptedFileData, fileName, dataFormat, base64IV);
-    
+            //Reads data as an array buffer
+            const fileData = data.target.result;
+
+            if (senderCipher == "XOR" && recipientCipher == "XOR") {
+                if (senderHashedPassword !== null && recipientHashedPassword !== null) {
+                    const salt = crypto.getRandomValues(new Uint8Array(16));
+                    const base64Salt = await arrayBuffertoBase64(salt.buffer);
+                    const cipher = "XOR";
+
+                    const Uint8Data = await encryptionManager.padUint8Array(new Uint8Array(fileData));
+
+                    //Derives XOR key from hashed password and message salt
+                    const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, salt.buffer)
+                    
+                    //Encrypts data using CBC decryption and converts data to array buffer
+                    const base64EncryptedFileData = await encryptionManager.CBCEncrypt(Uint8Data, ArrayXORKey, IV)
+
+                    const encryptedFileData = await Base64toArrayBuffer(base64EncryptedFileData)
+
+                    //Emits encrypted array buffer of bytes to python server
+                    sessionSocket.emit('file', sessionID, recipientID, encryptedFileData.buffer, fileName, dataFormat, cipher, base64IV, base64Salt);
+
+                };
+            } else {
+                const salt = null;
+                const cipher = "AES-RSA";
+
+                const encryptedFileData = await encryptionManager.encryptFile(fileData, AESKey, IV);
             
+                //Emits encrypted array buffer of bytes to python server
+                sessionSocket.emit('file', sessionID, recipientID, encryptedFileData, fileName, dataFormat, cipher, base64IV, salt);
+            };
         }
     
         if (acceptedFormat.includes(dataFormat)) {
@@ -437,23 +452,22 @@ if (window.location.pathname == "/dashboard") {
                 console.log(insertPublicResponseData);
 
                 //Inserts sender private RSA key in IndexedDB Database
-                await saveKey(keyPair.privateKey, senderID)
+                await saveKey(keyPair.privateKey, senderID);
 
                 //Updates private RSA key in users database - for test purposes
-                const privateRSAKeyJWK = await encryptionManager.exportPrivateKey(keyPair.privateKey)
+                const privateRSAKeyJWK = await encryptionManager.exportPrivateKey(keyPair.privateKey);
 
                 const insertPrivateRSAResponse = await fetch(`/update-RSA-private-key/${privateRSAKeyJWK}`);
                 const insertPrivateResponseData = await insertPrivateRSAResponse.json();
-
 
             //Algorithm implemented for test purposes
             } else {
                 const RSAPrivateKeyResponse = await fetch(`get-RSA-private-key`);
                 const RSAPrivateKeyData = await RSAPrivateKeyResponse.json().then(JSON.parse);
 
-                const RSAPrivateKey = await encryptionManager.importPrivateKey(RSAPrivateKeyData)
+                const RSAPrivateKey = await encryptionManager.importPrivateKey(RSAPrivateKeyData);
 
-                await saveKey(RSAPrivateKey, senderID)
+                await saveKey(RSAPrivateKey, senderID);
             }
 
             console.log("No public key");
@@ -468,6 +482,7 @@ if (window.location.pathname == "/dashboard") {
         const introduction = document.getElementById("introduction");
 
         chatList.addEventListener("click", async event => {
+            //maybe add condition to stop messages for loop whenever user clicks another user
 
             const clickedUser = event.target.closest(".chat-user");
 
@@ -506,48 +521,51 @@ if (window.location.pathname == "/dashboard") {
 
             //Loops through all messages synchronously, decrypting them and pushing them to HTML, outputting to user's screen
             for (const message of data) {
-                console.log(message.content)
                 await processSingleMessage(message);
             };
 
             async function processSingleMessage(message) {
                 message.recipientID = recipientID;
 
-                const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
-                const base64EncryptedAESKeys = await idResponse.json();
+                if (message.cipher == "AES-RSA") {
+                    const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
+                    const base64EncryptedAESKeys = await idResponse.json();
+    
+                    let base64EncryptedAESKey;
+    
+                    if (message.senderID == senderID) {
+    
+                        base64EncryptedAESKey = base64EncryptedAESKeys.senderEncryptedAESKey;
+            
+                    } else if (message.senderID == recipientID) {
+    
+                        base64EncryptedAESKey = base64EncryptedAESKeys.recipientEncryptedAESKey;
+    
+                    };
+    
+                    //If program has found previous stored encrypted AES key, gets decrypted AES key from map
+                    //preventing program from re-decrypting already decrypted AES key
+                    if (AESKeyDict.has(base64EncryptedAESKey)) {
+                        const AESKey = AESKeyDict.get(base64EncryptedAESKey);
+    
+                        await processMessage(AESKey, message);
+                    } else {
+                        //Gets RSA Private key from IndexedDB Database
+                        const RSAPrivateKey = await getPrivateKey(senderID);
+    
+                        const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);
+                        
+                        const AESKey = await encryptionManager.decryptAESKey(encryptedAESKey.buffer, RSAPrivateKey);
+    
+                        //Pushes decrypted AES key to map
+                        AESKeyDict.set(base64EncryptedAESKey, AESKey);
+    
+                        await processMessage(AESKey, message);
+                    }
 
-                let base64EncryptedAESKey;
-
-                if (message.senderID == senderID) {
-
-                    base64EncryptedAESKey = base64EncryptedAESKeys.senderEncryptedAESKey;
-        
-                } else if (message.senderID == recipientID) {
-
-                    base64EncryptedAESKey = base64EncryptedAESKeys.recipientEncryptedAESKey;
-
-                };
-
-                //If program has found previous stored encrypted AES key, gets decrypted AES key from map
-                //preventing program from re-decrypting already decrypted AES key
-                if (AESKeyDict.has(base64EncryptedAESKey)) {
-                    const AESKey = AESKeyDict.get(base64EncryptedAESKey);
-
+                } else if (message.cipher == "XOR") {
+                    const AESKey = null;
                     await processMessage(AESKey, message);
-                } else {
-                    //Gets RSA Private key from IndexedDB Database
-                    const RSAPrivateKey = await getPrivateKey(senderID);
-
-                    const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);
-                    
-                    const AESKey = await encryptionManager.decryptAESKey(encryptedAESKey.buffer, RSAPrivateKey);
-
-
-                    //Pushes decrypted AES key to map
-                    AESKeyDict.set(base64EncryptedAESKey, AESKey);
-
-                    await processMessage(AESKey, message);
-
                 }
             };
 

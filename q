@@ -1,0 +1,355 @@
+[33mcommit 02acdce686fd204858e31fda161f1c23c8759ef8[m[33m ([m[1;36mHEAD[m[33m)[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Jan 6 02:58:23 2024 +0000
+
+    Finished XOR implementation for messages
+    - Created button for changing user cipher
+    - Created function for updating hashed password
+    - Created queries for hashed passwords & ciphers
+    - Replaced array buffers for string in CBC encryption/decryption
+
+[33mcommit d4bd701e8dc0d3b3ca53c5fe6efa720080c813bf[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Fri Jan 5 19:14:35 2024 +0000
+
+    Started implementation of XOR cipher
+
+[33mcommit 3dcf69824efae7a4686596401316fdd656df26a3[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Wed Jan 3 20:32:55 2024 +0000
+
+    Implemented algorithm to receive private RSA keys
+    - for test purposes only, in order to show web encrypted real
+    time communication
+
+[33mcommit b4e39ae826b1de60683877e75d7b25ea20f7639a[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Tue Jan 2 22:27:35 2024 +0000
+
+    Finished implementing AES-RSA encryption
+    - Implemented real-time encryption
+    - Cleaned up code
+
+[33mcommit 59335838a07711c6c75a6095af805354a8c548ab[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Tue Jan 2 16:30:06 2024 +0000
+
+    Implemented AES-RSA encryption for recipient msgs
+    -Implemented encryption for all data types
+    -Updated IndexedDB Database
+
+[33mcommit d0a5695e2a1e976737a81c802d3302f07dd941ab[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Dec 31 21:12:58 2023 +0000
+
+    Implemented AES-RSA key wrapping, AES key storage
+
+[33mcommit 7e5044d91cb1a29e6e7d7b73256e324377f8b07f[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Dec 30 22:36:45 2023 +0000
+
+    Implemented IndexedDB and RSA Key generation
+
+[33mcommit 2aa39aa973f05dfc45a3ba30f602a78dadd57f88[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Fri Dec 29 21:01:26 2023 +0000
+
+    Refactored auth.py & views.py to OOP
+    Reduced repetition via OOP
+    Created Encryption class in preparation for implementation of encryption
+
+[33mcommit 953e4e0c8e005548d4957addf73dcd8ac0859cc4[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Dec 28 19:13:41 2023 +0000
+
+    Implemented notification counter in real-time
+
+[33mcommit aedba7f5399224677ed9ddedb910323ffb4a4c3c[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Wed Dec 27 20:06:30 2023 +0000
+
+    Implemented .txt and .pdf file transmission
+
+[33mcommit c75876538e84d9f6764bc92adb1fdd101037ded8[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Tue Dec 26 19:24:53 2023 +0000
+
+    Implemented image upload & communication
+    - also fixed files being able to overwrite themselves
+
+[33mcommit 550294fb4efc1bd61891e55193a29ff3ea825118[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Dec 24 21:59:19 2023 +0000
+
+    Implemented basic file & images server storage
+    Created HTML for upload file button
+
+[33mcommit 60c73967118f133a4b4d1e0c9a02c760dc0fc102[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Dec 23 19:06:19 2023 +0000
+
+    Finished functionality for web-sockets
+
+[33mcommit 6b017ef6f73d5873b0dad7dfe2e255037f4cd342[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Dec 23 14:46:01 2023 +0000
+
+    Added untracked files
+
+[33mcommit 45f52ada0c1fb5309370ad7a255cd8c1bb60d4b6[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Dec 23 14:40:55 2023 +0000
+
+    Created basic websocket functionality and cleaned
+    up code
+
+[33mcommit aa140da25b80a6ad98be865dd58fed644c916dda[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Dec 21 16:28:24 2023 +0000
+
+    Added comments to code
+
+[33mcommit e421034fb8e44f45145abbe882e6d51a9a30243a[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Sep 24 23:54:48 2023 +0100
+
+    Remove venv directory from version control
+
+[33mcommit 73e55fb9541742f06438febb117ad35b656486fd[m
+Merge: e7b47f0 b6870b2
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Sep 24 23:52:33 2023 +0100
+
+    Made messages not overflow to right of screen
+
+[33mcommit e7b47f01a1aad5eff44ef6180cedcd37d3737162[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Sep 24 23:46:45 2023 +0100
+
+    Fixed messages extending on x axis
+
+[33mcommit b6870b2a4f35c7b728e8aed849f74bebb3a6c391[m
+Author: alexsukhin <123515224+alexsukhin@users.noreply.github.com>
+Date:   Sun Sep 24 23:18:20 2023 +0100
+
+    Delete venv directory
+
+[33mcommit 8ed7b0bc4512791c5470361e361492a529b72ee3[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Sep 24 23:12:51 2023 +0100
+
+    Fixed collision of messages in chatbox
+
+[33mcommit 3c9f97e25c3942c0d4d4e73c21afb2832d116ee7[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Sep 24 20:21:12 2023 +0100
+
+    Fixed wrong order of messages bug
+
+[33mcommit df40299a412adc61e9f437d08bc0c447b6e21909[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Sep 2 00:16:46 2023 +0100
+
+    Created basic functionality of chat
+
+[33mcommit 87c922a0ae8a4f2ef4aeefcedbfe45832e684ea7[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 31 01:15:05 2023 +0100
+
+    Fully added functionality of chat list and started basic functionality of chat messages
+
+[33mcommit a8edfe39f16eacc3ec111de7de52bbbb672d94cf[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Tue Aug 22 01:43:49 2023 +0100
+
+    created basic functionality for chat window, created queries for conversation, messages
+
+[33mcommit 11ce9f8f39c88a5f109923d69c7f8cecab2eee52[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 17 23:18:06 2023 +0100
+
+    added all backend functionality to profile page
+
+[33mcommit de08744b5fa38bdf86bd3a61e4b1680e3ef30b0f[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Aug 13 23:54:46 2023 +0100
+
+    Added basic functionality of profile page + Logout button
+
+[33mcommit 6cca7eb5c548a277bbe33809629613192f05da70[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sun Aug 13 13:17:17 2023 +0100
+
+    Finished functionality of adding users onto chat list
+
+[33mcommit cb7c055be3d41db7ffe555e988ea528d6f03b41c[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Aug 12 23:50:23 2023 +0100
+
+    added functionality to add user button
+
+[33mcommit 681f7f96cca3356872f4bd1db114f9f15dfdbdf7[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Tue Aug 8 22:17:30 2023 +0100
+
+    added some css to dashboard
+
+[33mcommit bb2bc695cee510c0e0ce68d45ecd3238ff6e1027[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Tue Aug 8 20:30:16 2023 +0100
+
+    cleaned up code, better config security
+
+[33mcommit cae966f0d3c1a7a8cf767d9a6c471c476a4654b6[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Tue Aug 8 19:38:18 2023 +0100
+
+    added login process, implemented flask-login, basic html for dashboard
+
+[33mcommit 3e563f2714fa2c498c4124364e81d2faa8e3badb[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Aug 5 22:48:28 2023 +0100
+
+    register users in database using sql
+
+[33mcommit 3b90d98376a9f013480f09728ad108cbe23610f1[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Sat Aug 5 16:01:45 2023 +0100
+
+    Add Button
+
+[33mcommit 8d21e37c4c8fc4d78fd566d11600de8f914b414b[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Fri Aug 4 18:41:22 2023 +0100
+
+    update signup, login html
+
+[33mcommit 8994790ec5cb0db4f40ffd33d4cd18ca8d685020[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Fri Aug 4 18:31:19 2023 +0100
+
+    creating html, css for signup & login pages
+
+[33mcommit ff9d17484aea3ac798d9712592abd87a31f684f6[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Fri Aug 4 14:22:30 2023 +0100
+
+    import bootstrap into static
+
+[33mcommit 5afc7c94c29e37e35f653d78d7e4992b4d707637[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 21:20:19 2023 +0100
+
+    delete venv
+
+[33mcommit 05c56848a50de3436fb3a1aae29f21619bed4a91[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 21:14:24 2023 +0100
+
+    remove config.py
+
+[33mcommit fd67c9b31cb4145f42b7d5368b00be5c7c40409b[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 21:13:31 2023 +0100
+
+    remove venv
+
+[33mcommit 62e2830cc5bf5132d452d479d8d6bb6eb65a3c9e[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 21:09:50 2023 +0100
+
+    added routes
+
+[33mcommit 23bd96b14d66228f5be94d3281582f99738e8bbe[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 20:24:23 2023 +0100
+
+    Stop tracking venv/
+
+[33mcommit 8431b8c5eaa63b682ee43168298bf6b4486403bd[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 20:20:53 2023 +0100
+
+    create basic flask app
+
+[33mcommit 6fcc79e6de26c375bceedc5cd366aee26e0ca6fe[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 19:49:51 2023 +0100
+
+    Remove venv folder from version control
+
+[33mcommit e05ee21c2a04bdf0c62f108e186eea85db147f50[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 19:39:52 2023 +0100
+
+    add database.py and auth.py
+
+[33mcommit e262b65f200a450025c38a2186d37c22bacaf073[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 19:24:05 2023 +0100
+
+    created project structure, initalized libraries
+
+[33mcommit 534f92587c2d314f92b051be7c2528ae43f3cc84[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 17:56:56 2023 +0100
+
+    deleting test
+
+[33mcommit 0df975c2d01a1c336741dcafcc4e96d95ad4418b[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 17:56:26 2023 +0100
+
+    adding test
+
+[33mcommit 4a6d142846c268fb13e62899441a4a38bfc906b8[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 17:49:27 2023 +0100
+
+    test
+
+[33mcommit 18d7b9b30334db43c0d831634c198d89d8109b67[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 17:48:50 2023 +0100
+
+    test
+
+[33mcommit 7d9e7f76c9be6f875115336fc68fd12f8d9918d8[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 17:47:47 2023 +0100
+
+    'hi'
+
+[33mcommit daebfbb7246d81254900eb0ea180caa74fc54059[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 17:47:16 2023 +0100
+
+    'test'
+
+[33mcommit b6f1f4039f61fd5b90c367b5ee93aaf779bf1e70[m
+Author: Alex Sukhin <alex@sukhin.net>
+Date:   Thu Aug 3 17:45:04 2023 +0100
+
+    'test'
+
+[33mcommit 6a163083afb008d55111f6c1688c208ce2cf0e51[m
+Author: alexsukhin <123515224+alexsukhin@users.noreply.github.com>
+Date:   Thu Jul 6 09:07:08 2023 +0100
+
+    Update README.md
+    
+    update docs file
+
+[33mcommit feace230b2bf62b5b8dffc0e54bb3d606e0f15a7[m
+Author: alexsukhin <123515224+alexsukhin@users.noreply.github.com>
+Date:   Thu Jul 6 09:06:18 2023 +0100
+
+    Update README.md
+    
+    add docs page
+
+[33mcommit 2a06dd19c030a3903eaeb1dcf669aa434ef80bcb[m
+Author: alexsukhin <123515224+alexsukhin@users.noreply.github.com>
+Date:   Tue Jan 24 22:24:51 2023 +0000
+
+    Initial commit

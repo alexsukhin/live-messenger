@@ -234,6 +234,7 @@ class EncryptionManager {
     const textEncoder = new TextEncoder();
     const arrayPassword = textEncoder.encode(password);
 
+    //Converts array buffer to internal key
     const internalPassword = await crypto.subtle.importKey(
       'raw',
       arrayPassword.buffer,
@@ -242,6 +243,7 @@ class EncryptionManager {
       ['deriveBits', 'deriveKey']
     );
 
+    //Derives XOR key through hashed password and message salt
     const arrayDerivedKey = await crypto.subtle.deriveBits(
       {
         name: 'PBKDF2',
@@ -250,7 +252,7 @@ class EncryptionManager {
         hash: 'SHA-256',
       },
       internalPassword,
-      128 // Adjust the number of bits as needed
+      128
     );
 
     return arrayDerivedKey
@@ -259,10 +261,14 @@ class EncryptionManager {
 
   //Pad using PCKS#7 padding
   async padUint8Array(Uint8Data) { 
+    //Calculates length of padding required
     const padLength = 16 - (Uint8Data.length % 16);
+    //Creates a new array with length of original array + padding
     const padData = new Uint8Array(Uint8Data.length + padLength)
+    //Copies original data to new pad array
     padData.set(Uint8Data)
 
+    //Inserts the amount of padding bytes required with value of the padlength
     for (let i = Uint8Data.length; i < padData.length; i++) {
       padData[i] = padLength;
     }
@@ -272,9 +278,12 @@ class EncryptionManager {
 
   //Unpad using PCKS#7 padding
   async unpadUint8Array(padData) {
+    //Calculates length of pad used in data through value of last bit of array
     const padLength = padData[padData.length - 1];
+    //Calculates original length of data by subtracting pad array with pad length
     const originalLength = padData.length - padLength;
 
+    //Gets rid of padded data with slice function up to original length of data array
     return padData.slice(0, originalLength);
   }
 
@@ -284,7 +293,10 @@ class EncryptionManager {
 
     const result = new Uint8Array(Uint8Data.length)
 
+    //Encrypts data array inputted with XOR encryption
     for (let i = 0; i < Uint8Data.length; i++) {
+      //XORs original array with key array
+      //Modulo operator used to repeat key used in encryption if key is shorter than data
       result[i] = Uint8Data[i] ^ Uint8Key[i % Uint8Data.length];
     }
 
@@ -293,15 +305,19 @@ class EncryptionManager {
 
   async CBCEncrypt(Uint8Data, XORKey, IV) {
 
+    //Initialises result array with length of input array
     let result = new Uint8Array(Uint8Data.length);
     let previousBlock = IV;
 
     for (let i = 0; i < Uint8Data.length; i += 16) {
-      
+      //Gets current block of 16 bit data
       const currentBlock = Uint8Data.slice(i, i + 16)
+      //XORs current block of data with IV for first run
+      //XORs current block of data with previous 'encryptedblock' for all runs after first
       const XORBlock = await encryptionManager.XORCipher(currentBlock, previousBlock)
       const encryptedBlock = await encryptionManager.XORCipher(XORBlock, XORKey)
 
+      //Appends encrypted block to result
       result.set(encryptedBlock, i)
       previousBlock = encryptedBlock;
     }
@@ -314,28 +330,30 @@ class EncryptionManager {
     // CBC Decryption
   async CBCDecrypt(ciphertext, XORKey, IV) {  
 
+
     const Uint8Data = await Base64toArrayBuffer(ciphertext)
+
 
     let result = new Uint8Array(Uint8Data.length);
     let previousBlock = IV;
 
-    for (let i = 0; i < ciphertext.length; i += 16) {
+    for (let i = 0; i < Uint8Data.length; i += 16) {
+      //Gets current block of 16 bit data
       const currentBlock = Uint8Data.slice(i, i + 16);
       const decryptedBlock = await encryptionManager.XORCipher(currentBlock, XORKey)
+      //XORs current decrypted block of data with IV for first run
+      //XORs current decrypted block of data with previous 'decryptedblock' for all runs after first
       const XORBlock = await encryptionManager.XORCipher(decryptedBlock, previousBlock)
 
+      //Appends decrypted block to result
       result.set(XORBlock, i)
       previousBlock = currentBlock;
     } 
 
-
-
+    //Unpads result with PCKS#7 padding
     const unpaddedResult = await encryptionManager.unpadUint8Array(result);
 
-    const textDecoder = new TextDecoder();
-    const plaintext = textDecoder.decode(unpaddedResult);
-
-    return plaintext;
+    return unpaddedResult.buffer;
 
   }
 

@@ -3,11 +3,11 @@ import {saveKey, getPrivateKey} from "./indexeddb.js";
 
 
 export async function getConnectionID(recipientID) {
-    //Gets connection ID and returns as a JSON response
+    //Gets connection IDs of sender and recipient and returns as a JSON response
     const connectionResponse = await fetch(`/get-connection-id/${recipientID}`);
     const connectionData = await connectionResponse.json();
 
-    return connectionData;
+    return {senderConnectionID: connectionData[0][0], recipientConnectionID: connectionData[1][0] }
 };
 
 export async function getConversationID(connectionID) {
@@ -36,6 +36,30 @@ export async function getSenderID() {
     return senderID
 };
 
+export async function getCiphers(senderID, recipientID) {
+    //Gets name of sender's and recipient's ciphers
+    const senderCipherResponse = await fetch(`get-cipher/${senderID}`);
+    const senderCipherData = await senderCipherResponse.json();
+    
+    const recipientCipherResponse = await fetch(`get-cipher/${recipientID}`);
+    const recipientCipherData = await recipientCipherResponse.json();
+
+    return {senderCipher: senderCipherData, recipientCipher: recipientCipherData};
+}
+
+export async function getHashedPasswords(senderConversationID, recipientConversationID) {
+    //Gets hashed password of sender and recipient
+    const senderPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
+    const senderPassword = await senderPasswordResponse.json();
+
+    const recipientPasswordResponse = await fetch(`get-XOR-hashed-password/${recipientConversationID}`);
+    const recipientPassword = await recipientPasswordResponse.json();
+
+    return {senderHashedPassword: senderPassword, recipientHashedPassword: recipientPassword};
+
+    
+}
+
 export async function getEncryptedAESKeys(sessionID) {
     //Gets base64 encrypted AES keys and returns as a JSON response
     const idResponse = await fetch(`get-encrypted-AES-key/${sessionID}`);
@@ -59,7 +83,7 @@ export async function arrayBuffertoBase64(arrayBuffer) {
 };
 
 export async function Base64toArrayBuffer(base64String) {
-    
+
     const plaintext = atob(base64String)
 
     //https://stackoverflow.com/questions/21797299/convert-base64-string-to-arraybuffer
@@ -86,15 +110,12 @@ export function insertChatMessage(message, chatMessages) {
 
 export async function updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID) {
 
-    const senderCipherResponse = await fetch(`get-cipher/${senderID}`);
-    const senderCipherData = await senderCipherResponse.json()
-    
-    const recipientCipherResponse = await fetch(`get-cipher/${recipientID}`);
-    const recipientCipherData = await recipientCipherResponse.json()
+    const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
 
     let senderHashedPassword;
     let recipientHashedPassword;
 
+    //Gets hashed XOR password of sender and recipient if user's have created a conversation with each other
     if (senderConversationID == null) {
         senderHashedPassword = null;
     } else {
@@ -109,33 +130,43 @@ export async function updateXORPassword(senderID, recipientID, senderConversatio
         recipientHashedPassword = await recipientHashedPasswordResponse.json()
     }
 
-    console.log('sender', senderHashedPassword)
-    console.log('recipient', recipientHashedPassword)
-
-    if (senderCipherData == "XOR" && recipientCipherData == "XOR") {
+    //If sender and recipient have enabled XOR cipher and both hashed passwords are null, allows sender to
+    //enter hashed password
+    if (senderCipher == "XOR" && recipientCipher == "XOR") {
         if (senderHashedPassword == null && recipientHashedPassword == null) {
-
+            //Shows add password modal
             $("#addPasswordModal").modal("show");
+
             const addPasswordButton = document.getElementById("add-XOR-password-button")
 
             addPasswordButton.addEventListener("click", async () => {
+                //Gets XOR password user entered in and hashes it with SHA-256
                 const XORPassword = document.getElementById('XORPassword').value;
                 const hashedPassword = await encryptionManager.hashPassword(XORPassword)
                 
+                //Updates hashed XOR password in user's database
                 const insertXORResponse = await fetch(`/update-XOR-hashed-password/${hashedPassword}/${senderConversationID}`);
                 const insertXORData = await insertXORResponse.json();
                 console.log(insertXORData)
 
+                //Hides add password modal
                 $('#addPasswordModal').modal('hide');
             })  
+        //If sender and recipient have enabled XOR cipher and sender hashed password is null, allows sender to
+        //enter hashed password with an additional password validation check
         } else if (senderHashedPassword == null && recipientHashedPassword !== null) {
+
+            //Shows add password modal
             $("#addPasswordModal").modal("show");
             const addPasswordButton = document.getElementById("add-XOR-password-button")
 
             addPasswordButton.addEventListener("click", async () => {
+                //Gets XOR password user entered in and hashes it with SHA-256
                 const XORPassword = document.getElementById('XORPassword').value;
                 const hashedPassword = await encryptionManager.hashPassword(XORPassword)
 
+                //If entered hashed password is the same as recipient's hashed password in database,
+                //updates hashed password ni user's database and hides add password modal
                 if (hashedPassword == recipientHashedPassword) {
                     const insertXORResponse = await fetch(`/update-XOR-hashed-password/${hashedPassword}/${senderConversationID}`);
                     const insertXORData = await insertXORResponse.json();
@@ -154,6 +185,7 @@ export async function updateXORPassword(senderID, recipientID, senderConversatio
 
 export async function appendMessage(message, senderID, chatMessages, AESKey) {
 
+    //If cipher is AES-RSA, decrypts data with AES protocol
     if (message.cipher == "AES-RSA") {
         const bufferContent = await Base64toArrayBuffer(message.content);
         const bufferIV = await Base64toArrayBuffer(message.IV);
@@ -165,21 +197,26 @@ export async function appendMessage(message, senderID, chatMessages, AESKey) {
     
         message.content = plaintext;
 
+    //If cipher is XOR, decrypts data with XOR-CBC protocol
     } else if (message.cipher == "XOR") {
 
-        const connectionIDs = await getConnectionID(message.recipientID);
-        const senderConnectionID = connectionIDs[0][0];
+        //Gets sender hashed password
+        const {senderConnectionID} = await getConnectionID(message.recipientID);
         const senderConversationID = await getConversationID(senderConnectionID);
         const senderHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
         const senderHashedPassword = await senderHashedPasswordResponse.json();
 
-        const bufferSalt = await Base64toArrayBuffer(message.salt)
+        const bufferSalt = await Base64toArrayBuffer(message.salt);
         const bufferIV = await Base64toArrayBuffer(message.IV);
 
-        const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, bufferSalt.buffer)
-        const plaintext = await encryptionManager.CBCDecrypt(message.content, ArrayXORKey, bufferIV.buffer);
+        //Derives XOR key from hashed password and message salt
+        const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, bufferSalt.buffer);
 
-        message.content = plaintext;
+        //Decrypts data using CBC decryption and converts data to plaintext
+        const arrayData = await encryptionManager.CBCDecrypt(message.content, ArrayXORKey, bufferIV.buffer);
+        const base64Data = await arrayBuffertoBase64(arrayData);
+
+        message.content = atob(base64Data);
 
     }
 
@@ -202,11 +239,35 @@ export async function appendMessage(message, senderID, chatMessages, AESKey) {
 
 export async function appendFile(file, senderID, chatMessages, AESKey) {
 
-    const bufferContent = await Base64toArrayBuffer(file.content);
-    const bufferIV = await Base64toArrayBuffer(file.IV);
+    //If cipher is AES-RSA, decrypts data with AES protocol
+    if (file.cipher == "AES-RSA") {
+        const bufferContent = await Base64toArrayBuffer(file.content);
+        const bufferIV = await Base64toArrayBuffer(file.IV);
+    
+        const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
+        file.content = data;
 
-    const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
-    file.content = data;
+    //If cipher is XOR, decrypts data with XOR-CBC protocol
+    } else if (file.cipher == "XOR") {
+        //Gets sender hashed password
+        const {senderConnectionID} = await getConnectionID(file.recipientID);
+        const senderConversationID = await getConversationID(senderConnectionID);
+        const senderHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
+        const senderHashedPassword = await senderHashedPasswordResponse.json();
+
+        const bufferSalt = await Base64toArrayBuffer(file.salt);
+        const bufferIV = await Base64toArrayBuffer(file.IV);
+
+
+        //Derives XOR key from hashed password and message salt
+        const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, bufferSalt.buffer);
+
+        //Decrypts data using CBC decryption and converts data to array buffer
+        const bufferData = await encryptionManager.CBCDecrypt(file.content, ArrayXORKey, bufferIV.buffer);
+
+        file.content = bufferData;
+
+    }
 
     //Splits file path from path to file on server to file name user originally proposed, e.g. 'image.png'
     const filePath = file.filePath
@@ -251,14 +312,38 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
 
 export async function appendImage(file, senderID, chatMessages, AESKey) {
 
-    const bufferContent = await Base64toArrayBuffer(file.content);
-    const bufferIV = await Base64toArrayBuffer(file.IV);
-    
-    const data = await encryptionManager.decryptImage(bufferContent.buffer, AESKey, bufferIV);
-    
-    const base64Data = await arrayBuffertoBase64(data);
+    //If cipher is AES-RSA, decrypts data with AES protocol
+    if (file.cipher == "AES-RSA") {
+        const bufferContent = await Base64toArrayBuffer(file.content);
+        const bufferIV = await Base64toArrayBuffer(file.IV);
+        
+        const bufferData = await encryptionManager.decryptImage(bufferContent.buffer, AESKey, bufferIV);
+        
+        const base64Data = await arrayBuffertoBase64(bufferData);
 
-    file.content = base64Data;
+        file.content = base64Data;
+    //If cipher is XOR, decrypts data with XOR-CBC protocol
+    } else if (file.cipher == "XOR") {
+        //Gets sender hashed password
+        const {senderConnectionID} = await getConnectionID(file.recipientID);
+        const senderConversationID = await getConversationID(senderConnectionID);
+        const senderHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
+        const senderHashedPassword = await senderHashedPasswordResponse.json();
+
+        const bufferSalt = await Base64toArrayBuffer(file.salt);
+        const bufferIV = await Base64toArrayBuffer(file.IV);
+
+        //Derives XOR key from hashed password and message salt
+        const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, bufferSalt.buffer);
+
+        //Decrypts data using CBC decryption and converts data to array buffer
+        const bufferData = await encryptionManager.CBCDecrypt(file.content, ArrayXORKey, bufferIV.buffer);
+        const base64Data = await arrayBuffertoBase64(bufferData)
+
+        file.content = base64Data;
+
+
+    }
 
     //Assigns correct URL format to output images to HTML in base64
     const dataURL = `data:${file.dataFormat};base64,${file.content}`
