@@ -11,8 +11,8 @@ def insertUser(username, password, firstName, lastName):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO users (Username, HashedPassword, FirstName, LastName) VALUES (%s, %s, %s, %s);"
-    values = (username, password, firstName, lastName,)
+    sql = "INSERT INTO users (Username, HashedPassword, FirstName, LastName, Cipher) VALUES (%s, %s, %s, %s, %s);"
+    values = (username, password, firstName, lastName, "AES-RSA")
     cursor.execute(sql, values)
 
     conn.commit()
@@ -37,12 +37,12 @@ def insertConnection(senderID, recipientID):
     cursor.close()
 
 #Inserts a new message into messages database
-def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, IV):
+def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, cipher, IV, salt):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, DataFormat, IV) VALUES (%s, %s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, encryptedContent, dataFormat, IV)
+    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, DataFormat, Cipher, IV, Salt) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
+    values = (sessionID, senderID, recipientID, encryptedContent, dataFormat, cipher, IV, salt)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -207,6 +207,49 @@ def resetNotificationCounter(senderID, recipientID):
     conn.commit()
     cursor.close()
 
+def updateAESCipher(senderID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+    
+    sql = """UPDATE users
+    SET Cipher = "AES-RSA"
+    WHERE (UserID = %s);"""
+    values = (senderID,)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
+    
+def updateXORCipher(senderID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+    
+    sql = """UPDATE users
+    SET Cipher = "XOR"
+    WHERE (UserID = %s);"""
+    values = (senderID,)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
+def updateXORHashedPassword(XORHashedPassword, conversationID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    UPDATE conversations SET XorHashedPassword = %s WHERE ConversationID = %s
+    """
+    values = (XORHashedPassword, conversationID)
+    cursor.execute(sql, values)
+
+    conn.commit()
+    cursor.close()
+
+    return XORHashedPassword
+
+
 #SELECT queries
 
 #Checks if a user exists
@@ -325,7 +368,7 @@ def getChatMessages(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql="""SELECT SessionID, SenderID, RecipientID, EncryptedContent, FilePath, DataFormat, IV FROM messages
+    sql="""SELECT SessionID, SenderID, RecipientID, EncryptedContent, FilePath, DataFormat, Cipher, IV, Salt FROM messages
     WHERE (SenderID = %s AND RecipientID = %s)
     OR (SenderID = %s AND RecipientID = %s)
     ORDER BY Timestamp ASC;"""
@@ -346,7 +389,9 @@ def getChatMessages(senderID, recipientID):
             "content": message[3],
             "filePath": message[4],
             "dataFormat": message[5],
-            "IV": message[6]
+            "cipher": message[6],
+            "IV": message[7],
+            "salt": message[8]
         }
         
         
@@ -440,4 +485,32 @@ def getEncryptedAESKey(sessionID):
 
 
     return AESKeyDict
+
+def getCipher(userID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT Cipher FROM users WHERE UserID = %s
+    """
+    cursor.execute(sql, (userID,))
+    cipher = cursor.fetchone()
+
+    cursor.close()
+
+    return cipher
+
+def getXORHashedPassword(conversationID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT XORHashedPassword FROM conversations WHERE ConversationID = %s
+    """
+    cursor.execute(sql, (conversationID,))
+    XORHashedPassword = cursor.fetchone()
+
+    cursor.close()
+
+    return XORHashedPassword
 

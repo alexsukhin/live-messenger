@@ -43,17 +43,31 @@ def update_RSA_private_key(privateRSAKey):
     return jsonify({"message": "Updated private RSA key successfully"})
 
 #HTML route for updating the timestamp in conversations database
-@views.route("/update-RSA-private-key-NULL")
-@login_required
-def update_RSA_private_key_NULL():
-    updateRSAPrivateKeyNULL(current_user.id)
-    return jsonify({"message": "Reset private RSA key to NULL"})
-
 @views.route("/update-conversation/<conversationID>")
 @login_required
 def update_conversation(conversationID):
     updateConversation(conversationID)
     return jsonify({"message": "Conversation timestamp updated successfully"})
+
+
+@views.route("/update-AES-cipher")
+@login_required
+def update_AES_cipher():
+    updateAESCipher(current_user.id)
+    return jsonify({"message": "Updated cipher to AES-RSA"})
+
+@views.route("/update-XOR-cipher")
+@login_required
+def update_XOR_cipher():
+    updateXORCipher(current_user.id)
+    return jsonify({"message": "Updated cipher to XOR"})
+
+@views.route("/update-XOR-hashed-password/<hashedPassword>/<conversationID>")
+@login_required
+def update_XOR_hashed_password(hashedPassword, conversationID):
+    updateXORHashedPassword(hashedPassword, conversationID)
+    return jsonify({"message": "Updated XOR Hashed Password"})
+
 
 #HTML route for checking if user already has a conversation with another user
 @views.route("/check-conversation/<connectionID>")
@@ -75,8 +89,9 @@ def get_id():
 @views.route("/get-connection-id/<recipientID>")
 @login_required
 def get_connection_id(recipientID):
-    connectionID = getConnectionID(current_user.id, recipientID)
-    return jsonify(connectionID)
+    senderConnectionID = getConnectionID(current_user.id, recipientID)
+    recipientConnectionID = getConnectionID(recipientID, current_user.id)
+    return jsonify(senderConnectionID, recipientConnectionID)
 
 #HTML route for getting latest conversation ID between two users
 @views.route("/get-conversation-id/<connectionID>")
@@ -138,3 +153,18 @@ def get_encrypted_AES_key(userID):
 
     #Sends encryptedAESKeys as base64 strings in a dictionary
     return jsonify(encryptedAESKeyDict)
+
+@views.route("/get-cipher/<userID>")
+@login_required
+def get_cipher(userID):
+    cipher = getCipher(userID)
+
+    return jsonify(cipher[0])
+
+@views.route("/get-XOR-hashed-password/<conversationID>")
+@login_required
+def get_XOR_hashed_password(conversationID):
+    XORHashedPassword = getXORHashedPassword(conversationID)
+
+    return jsonify(XORHashedPassword[0])
+    

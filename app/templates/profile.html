@@ -24,10 +24,10 @@
         <div class="p-2 white">Profile Page</div>
         <a href="/dashboard" class="p-2 white">BACK</a>
     </div>
-    <div class="col-12 main-flex flex-column justify-content-around" style="line-height: 50px;">
+    <div class="col-12 main-flex flex-column justify-content-around" style="line-height: 45px;">
         <div class="p-2" style="margin-top: 30px;">
             Your name 
-            <button class="btn" style="position: absolute; top: 91px; left: 190px;" data-bs-toggle="modal" data-bs-target="#changeNameModal">
+            <button class="btn" style="position: absolute; top: 83px; left: 190px;" data-bs-toggle="modal" data-bs-target="#changeNameModal">
                 <img src="{{ url_for('static', filename='files/pencil2.png') }}" width="60">
             </button>
             <br>
@@ -35,11 +35,16 @@
         </div>
         <div class="p-2">
             Your username
-            <button class="btn" style="position: absolute; top: 247px; left: 218px;" data-bs-toggle="modal" data-bs-target="#changeUsernameModal">
+            <button class="btn" style="position: absolute; top: 223px; left: 218px;" data-bs-toggle="modal" data-bs-target="#changeUsernameModal">
                 <img src="{{ url_for('static', filename='files/pencil2.png') }}" width="60">
             </button>
             <br>
             {{ current_user.username }} <hr>
+        </div>
+        <div class="p-2">
+            <button type="button" class="btn" style="background-color: #9fc8ce;" data-bs-toggle="modal" data-bs-target="#changeCipherModal">
+                Change cipher
+            </button>
         </div>
         <div class="p-2">
             <button type="button" class="btn" style="background-color: #9fc8ce;" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
@@ -50,7 +55,7 @@
             <a href="/logout" class="button btn" style="background-color: #9fc8ce;">LOGOUT</a>
         </div>
     </div>
-    <div class="col-12 main-flex flex-column justify-content-between" style="height: 162.5px"></div>
+    <div class="col-12 main-flex flex-column justify-content-between" style="height: 162.5px;"></div>
 </div>
 
 <!-- modals -->
@@ -96,6 +101,25 @@
                     </div>
                     <p></p>
                     <button class="btn" name="changeUsername" id="change-username-button" style="background-color: #9fc8ce; color: white;">Change Username</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="changeCipherModal">
+    <div class="modal-dialog">
+         <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeCipherModalLabel">Change Cipher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST">
+                    <p></p>
+                    <button class="btn" name="changeAES" id="change-AES-cipher" style="background-color: #9fc8ce; color: white;">Change to AES Cipher (Strong)</button>
+                    <p></p> 
+                    <button class="btn" name="changeXOR" id="change-XOR-cipher" style="background-color: #9fc8ce; color: white;">Change to XOR Cipher (Fast)</button>
                 </form>
             </div>
         </div>

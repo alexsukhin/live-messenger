@@ -32,18 +32,22 @@ class ChatSocketIO(SocketIO):
             self.emit(event, data, room=room)
 
 
-    def handle_message(self, sessionID, recipientID, encryptedContent, dataFormat, IV):
+    def handle_message(self, sessionID, recipientID, encryptedContent, dataFormat, cipher, IV, salt):
         senderID = current_user.id
 
+        print(encryptedContent)
+
         #Stores message in messages database for retrieval when user opens chat
-        if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, IV):
+        if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, cipher, IV, salt):
         
             message = {
                 "sessionID": sessionID,
                 "senderID": senderID,
                 "recipientID": recipientID,
                 "content": encryptedContent,
-                "IV": IV
+                "cipher": cipher,
+                "IV": IV,
+                "salt": salt
             }
 
         #Emits message to both sender and recipient if they are online
@@ -63,9 +67,8 @@ class ChatSocketIO(SocketIO):
 
         #Encodes array buffer to base 64 string
         #https://stackoverflow.com/questions/23164058/how-to-encode-text-to-base64-in-python
-        base64Data = base64.b64encode(encryptedContent)
-        print('base64', base64Data)
-        
+        base64Data = base64.b64encode(encryptedContent).decode()
+
         #encrypted content is array buffer, base64 data is base 64 string
         if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, IV):
             #Try to output real encrypted image
@@ -124,3 +127,6 @@ socketio.on_event('increment-notification', socketio.increment_notification_coun
 
 #5th try finish implementation, do documentation
 #6-8 revise physics, anki, maths, if finish do documentation maybe on 8th do physics, can also do next week
+#tmrw - completely finish up implementation, do anki, then do documentation clean up code, comments
+#sunday - physics and maths
+#monday - physics and maths

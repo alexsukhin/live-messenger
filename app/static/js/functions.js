@@ -6,7 +6,20 @@ export async function getConnectionID(recipientID) {
     //Gets connection ID and returns as a JSON response
     const connectionResponse = await fetch(`/get-connection-id/${recipientID}`);
     const connectionData = await connectionResponse.json();
-    return connectionData[0];
+
+    return connectionData;
+};
+
+export async function getConversationID(connectionID) {
+    //Gets conversation ID and returns as a JSON response
+    const conversationResponse = await fetch(`/get-conversation-id/${connectionID}`);
+    const conversationData = await conversationResponse.json();
+
+    if (conversationData === null) {
+        return null;
+    }
+
+    return conversationData[0];
 };
 
 export async function getSessionID(conversationID) {
@@ -14,13 +27,6 @@ export async function getSessionID(conversationID) {
     const sessionResponse = await fetch(`/get-latest-session-id/${conversationID}`)
     const sessionData = await sessionResponse.json()
     return sessionData[0]
-};
-
-export async function getConversationID(connectionID) {
-    //Gets conversation ID and returns as a JSON response
-    const conversationResponse = await fetch(`/get-conversation-id/${connectionID}`);
-    const conversationData = await conversationResponse.json();
-    return conversationData[0];
 };
 
 export async function getSenderID() {
@@ -78,15 +84,104 @@ export function insertChatMessage(message, chatMessages) {
     }
 };
 
+export async function updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID) {
+
+    const senderCipherResponse = await fetch(`get-cipher/${senderID}`);
+    const senderCipherData = await senderCipherResponse.json()
+    
+    const recipientCipherResponse = await fetch(`get-cipher/${recipientID}`);
+    const recipientCipherData = await recipientCipherResponse.json()
+
+    let senderHashedPassword;
+    let recipientHashedPassword;
+
+    if (senderConversationID == null) {
+        senderHashedPassword = null;
+    } else {
+        const senderHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
+        senderHashedPassword = await senderHashedPasswordResponse.json()
+    }
+
+    if (recipientConversationID == null) {
+        recipientHashedPassword = null;
+    } else {
+        const recipientHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${recipientConversationID}`);
+        recipientHashedPassword = await recipientHashedPasswordResponse.json()
+    }
+
+    console.log('sender', senderHashedPassword)
+    console.log('recipient', recipientHashedPassword)
+
+    if (senderCipherData == "XOR" && recipientCipherData == "XOR") {
+        if (senderHashedPassword == null && recipientHashedPassword == null) {
+
+            $("#addPasswordModal").modal("show");
+            const addPasswordButton = document.getElementById("add-XOR-password-button")
+
+            addPasswordButton.addEventListener("click", async () => {
+                const XORPassword = document.getElementById('XORPassword').value;
+                const hashedPassword = await encryptionManager.hashPassword(XORPassword)
+                
+                const insertXORResponse = await fetch(`/update-XOR-hashed-password/${hashedPassword}/${senderConversationID}`);
+                const insertXORData = await insertXORResponse.json();
+                console.log(insertXORData)
+
+                $('#addPasswordModal').modal('hide');
+            })  
+        } else if (senderHashedPassword == null && recipientHashedPassword !== null) {
+            $("#addPasswordModal").modal("show");
+            const addPasswordButton = document.getElementById("add-XOR-password-button")
+
+            addPasswordButton.addEventListener("click", async () => {
+                const XORPassword = document.getElementById('XORPassword').value;
+                const hashedPassword = await encryptionManager.hashPassword(XORPassword)
+
+                if (hashedPassword == recipientHashedPassword) {
+                    const insertXORResponse = await fetch(`/update-XOR-hashed-password/${hashedPassword}/${senderConversationID}`);
+                    const insertXORData = await insertXORResponse.json();
+                    console.log(insertXORData)
+
+                    $('#addPasswordModal').modal('hide');
+                } else {
+                    console.log("Invalid password")
+                }
+            })  
+        } else {
+            console.log("Already entered XOR Password")
+        }
+    }
+}
+
 export async function appendMessage(message, senderID, chatMessages, AESKey) {
 
+    if (message.cipher == "AES-RSA") {
+        const bufferContent = await Base64toArrayBuffer(message.content);
+        const bufferIV = await Base64toArrayBuffer(message.IV);
+    
+        const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
+    
+        const base64Data = await arrayBuffertoBase64(data)
+        const plaintext = atob(base64Data)
+    
+        message.content = plaintext;
 
-    const bufferContent = await Base64toArrayBuffer(message.content);
-    const bufferIV = await Base64toArrayBuffer(message.IV);
+    } else if (message.cipher == "XOR") {
 
-    const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
+        const connectionIDs = await getConnectionID(message.recipientID);
+        const senderConnectionID = connectionIDs[0][0];
+        const senderConversationID = await getConversationID(senderConnectionID);
+        const senderHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
+        const senderHashedPassword = await senderHashedPasswordResponse.json();
 
-    message.content = data;
+        const bufferSalt = await Base64toArrayBuffer(message.salt)
+        const bufferIV = await Base64toArrayBuffer(message.IV);
+
+        const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, bufferSalt.buffer)
+        const plaintext = await encryptionManager.CBCDecrypt(message.content, ArrayXORKey, bufferIV.buffer);
+
+        message.content = plaintext;
+
+    }
 
     if (message.senderID == senderID) {
         const senderMessage = document.createElement("div");
@@ -111,30 +206,23 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
     const bufferIV = await Base64toArrayBuffer(file.IV);
 
     const data = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
-
     file.content = data;
 
     //Splits file path from path to file on server to file name user originally proposed, e.g. 'image.png'
     const filePath = file.filePath
     const fileName = (filePath.split("%"))[1];
 
-    const plaintext = file.content
-
-    //Converts plaintext to array buffer
-    const textEncoder = new TextEncoder();
-    console.log('after', plaintext)
-    const bytes = textEncoder.encode(plaintext).buffer
 
     let blob;
 
     //Assigns plaintext or bytes to blob depending on file format
     if (file.dataFormat == "text/plain") {
-        blob = new Blob([plaintext], {type: "text/plain"});
+        blob = new Blob([file.content], {type: "text/plain"});
     } else if (file.dataFormat == "application/pdf") {
-        blob = new Blob([bytes], {type: "application/pdf"});
+        blob = new Blob([file.content], {type: "application/pdf"});
     }   
 
-    console.log('blob', blob)
+
     
     if (file.senderID == senderID) {
 
@@ -167,7 +255,7 @@ export async function appendImage(file, senderID, chatMessages, AESKey) {
     const bufferIV = await Base64toArrayBuffer(file.IV);
     
     const data = await encryptionManager.decryptImage(bufferContent.buffer, AESKey, bufferIV);
-
+    
     const base64Data = await arrayBuffertoBase64(data);
 
     file.content = base64Data;
