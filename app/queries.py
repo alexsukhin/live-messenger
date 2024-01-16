@@ -37,12 +37,12 @@ def insertConnection(senderID, recipientID):
     cursor.close()
 
 #Inserts a new message into messages database
-def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, cipher, IV, salt):
+def insertMessage(sessionID, encryptedContent, dataFormat, IV, salt):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, EncryptedContent, DataFormat, Cipher, IV, Salt) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, encryptedContent, dataFormat, cipher, IV, salt)
+    sql = "INSERT INTO messages (SessionID, EncryptedContent, DataFormat, IV, Salt) VALUES (%s, %s, %s, %s, %s);"
+    values = (sessionID, encryptedContent, dataFormat, IV, salt)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -51,12 +51,12 @@ def insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat
     return True
 
 #Inserts a new file into messages database
-def insertFile(sessionID, senderID, recipientID, filePath, dataFormat, cipher, IV, salt):
+def insertFile(sessionID, filePath, dataFormat, IV, salt):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, SenderID, RecipientID, FilePath, DataFormat, Cipher, IV, Salt) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
-    values = (sessionID, senderID, recipientID, filePath, dataFormat, cipher, IV, salt)
+    sql = "INSERT INTO messages (SessionID, FilePath, DataFormat, Cipher, IV, Salt) VALUES (%s, %s, %s, %s, %s);"
+    values = (sessionID, filePath, dataFormat, IV, salt)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -66,12 +66,12 @@ def insertFile(sessionID, senderID, recipientID, filePath, dataFormat, cipher, I
     
 
 #Inserts a new session when user opens a chat session into sessions database
-def insertSession(conversationID, senderEncryptedAESKey, recipientEncryptedAESKey):
+def insertSession(conversationID, senderID, recipientID, cipher, senderEncryptedAESKey, recipientEncryptedAESKey):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO sessions (ConversationID, SenderEncryptedAESKey, RecipientEncryptedAESKey) VALUES (%s, %s, %s);"
-    values = (conversationID, senderEncryptedAESKey, recipientEncryptedAESKey)
+    sql = "INSERT INTO sessions (ConversationID, SenderID, RecipientID, cipher, SenderEncryptedAESKey, RecipientEncryptedAESKey) VALUES (%s, %s, %s, %s, %s, %s);"
+    values = (conversationID, senderID, recipientID, cipher, senderEncryptedAESKey, recipientEncryptedAESKey)
     cursor.execute(sql, values)
 
     conn.commit()
@@ -333,11 +333,9 @@ def getLatestSessionID(conversationID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = """SELECT SessionID
+    sql = """SELECT MAX(SessionID) AS SessionID
     FROM sessions
-    WHERE ConversationID = %s
-    ORDER BY SessionID DESC
-    LIMIT 1;"""
+    WHERE ConversationID = %s"""
     cursor.execute(sql, (conversationID,))
     sessionID = cursor.fetchone()
 
@@ -368,10 +366,14 @@ def getChatMessages(senderID, recipientID):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql="""SELECT SessionID, SenderID, RecipientID, EncryptedContent, FilePath, DataFormat, Cipher, IV, Salt FROM messages
-    WHERE (SenderID = %s AND RecipientID = %s)
-    OR (SenderID = %s AND RecipientID = %s)
-    ORDER BY Timestamp ASC;"""
+    sql="""SELECT messages.SessionID, EncryptedContent, FilePath, DataFormat, IV, Salt
+    FROM sessions, messages
+    WHERE (sessions.SessionID = messages.SessionID)
+    AND ((SenderID = %s AND RecipientID = %s)
+    OR (SenderID = %s AND RecipientID = %s))
+    ORDER BY Timestamp ASC
+    """
+
     cursor.execute(sql, (senderID, recipientID, recipientID, senderID))
     messages = cursor.fetchall()
 
@@ -384,14 +386,14 @@ def getChatMessages(senderID, recipientID):
     for message in messages:
         messageDict = {
             "sessionID": message[0],
-            "senderID": message[1],
-            "recipientID" : message[2],
-            "content": message[3],
-            "filePath": message[4],
-            "dataFormat": message[5],
-            "cipher": message[6],
-            "IV": message[7],
-            "salt": message[8]
+            "senderID": None,
+            "recipientID" : None,
+            "content": message[1],
+            "filePath": message[2],
+            "dataFormat": message[3],
+            "IV": message[4],
+            "salt": message[5],
+            "cipher": None
         }
         
         
@@ -485,6 +487,20 @@ def getEncryptedAESKey(sessionID):
 
 
     return AESKeyDict
+
+def getSessionData(sessionID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT SenderID, Cipher FROM sessions WHERE SessionID = %s
+    """
+    cursor.execute(sql, (sessionID,))
+    sessionData = cursor.fetchone()
+
+    cursor.close()
+
+    return sessionData
 
 def getCipher(userID):
     conn = mysql.connection

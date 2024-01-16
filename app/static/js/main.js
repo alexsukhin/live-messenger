@@ -1,4 +1,4 @@
-import {getConnectionID, getSessionID, getConversationID, getSenderID, getCiphers, getHashedPasswords, getEncryptedAESKeys, decryptBase64Key, arrayBuffertoBase64, Base64toArrayBuffer, updateXORPassword, appendMessage, appendImage, appendFile} from "./functions.js";
+import {getConnectionID, getConversationID, getSessionID, getSessionData, getSenderID, getCiphers, getHashedPasswords, getEncryptedAESKeys, decryptBase64Key, arrayBuffertoBase64, Base64toArrayBuffer, updateXORPassword, appendMessage, appendImage, appendFile} from "./functions.js";
 import {encryptionManager} from "./encryption.js";
 import {openDatabase, saveKey, getPrivateKey} from "./indexeddb.js";
 
@@ -108,6 +108,16 @@ async function updateUser(recipientID) {
         const recipientEncryptedAESKeyBuffer = await encryptionManager.encryptAESKey(AESKey, recipientRSAPublicKey);
         const recipientEncryptedAESKey = await arrayBuffertoBase64(recipientEncryptedAESKeyBuffer);
 
+        const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
+
+        let cipher;
+
+        //If sender and recipient have enabled XOR cipher, cipher used for communication is XOR
+        if (senderCipher == "XOR" && recipientCipher == "XOR") {
+            cipher = "XOR"
+        } else {
+            cipher = "AES-RSA"
+        }
         
 
         //Checks if a conversation between two users has been created before
@@ -122,10 +132,10 @@ async function updateUser(recipientID) {
             const recipientConversationID = await getConversationID(recipientConnectionID);
 
             //Allows user to enter XOR password if both user's have XOR enabled
-            await updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID);
+            await updateXORPassword(cipher, senderConversationID, recipientConversationID);
 
             //Inserts a session into database and establishes websocket
-            await initiateSession(recipientID, senderConversationID, senderEncryptedAESKey, recipientEncryptedAESKey);
+            await initiateSession(senderConversationID, senderID, recipientID, cipher, senderEncryptedAESKey, recipientEncryptedAESKey);
 
         } else {
 
@@ -137,10 +147,10 @@ async function updateUser(recipientID) {
             const updateConversationData = await updateConversationResponse.json();
             
             //Allows user to enter XOR password if both user's have XOR enabled
-            await updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID);
+            await updateXORPassword(cipher, senderConversationID, recipientConversationID);
 
             //Inserts a session into database and establishes websocket
-            initiateSession(recipientID, senderConversationID, senderEncryptedAESKey, recipientEncryptedAESKey);
+            initiateSession(senderConversationID, senderID, recipientID, cipher, senderEncryptedAESKey, recipientEncryptedAESKey);
 
 
 
@@ -151,11 +161,11 @@ async function updateUser(recipientID) {
 
 };
 
-async function initiateSession(recipientID, conversationID, senderEncryptedAESKey, recipientEncryptedAESKey) {
+async function initiateSession(conversationID, senderID, recipientID, cipher, senderEncryptedAESKey, recipientEncryptedAESKey) {
 
     //Inserts a session into sessions database
     //Sends encryptedAESKeys as a POST request since they are base64 strings, otherwise too long
-    const url = `/insert-session/${conversationID}`
+    const url = `/insert-session/${conversationID}/${senderID}/${recipientID}/${cipher}`
     const data = {
         senderEncryptedAESKey : senderEncryptedAESKey,
         recipientEncryptedAESKey : recipientEncryptedAESKey
@@ -172,7 +182,6 @@ async function initiateSession(recipientID, conversationID, senderEncryptedAESKe
 
     const insertSessionData = await insertSessionResponse.json();
 
-    const senderID = await getSenderID();
 
     //Connects and establishes a session websocket for current user
     sessionSocket = io.connect('http://127.0.0.1:5000');
@@ -521,11 +530,16 @@ if (window.location.pathname == "/dashboard") {
 
             //Loops through all messages synchronously, decrypting them and pushing them to HTML, outputting to user's screen
             for (const message of data) {
+
+                const {sessionSenderID, cipher } = await getSessionData(message.sessionID);
+                
+                message.senderID = sessionSenderID
+                message.cipher = cipher
+                message.recipientID = recipientID
                 await processSingleMessage(message);
             };
 
             async function processSingleMessage(message) {
-                message.recipientID = recipientID;
 
                 if (message.cipher == "AES-RSA") {
                     const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
@@ -547,7 +561,7 @@ if (window.location.pathname == "/dashboard") {
                     //preventing program from re-decrypting already decrypted AES key
                     if (AESKeyDict.has(base64EncryptedAESKey)) {
                         const AESKey = AESKeyDict.get(base64EncryptedAESKey);
-    
+
                         await processMessage(AESKey, message);
                     } else {
                         //Gets RSA Private key from IndexedDB Database

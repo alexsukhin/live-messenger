@@ -3,9 +3,13 @@ import {saveKey, getPrivateKey} from "./indexeddb.js";
 
 
 export async function getConnectionID(recipientID) {
+    //recipient true
     //Gets connection IDs of sender and recipient and returns as a JSON response
     const connectionResponse = await fetch(`/get-connection-id/${recipientID}`);
     const connectionData = await connectionResponse.json();
+
+    //data null
+
 
     return {senderConnectionID: connectionData[0][0], recipientConnectionID: connectionData[1][0] }
 };
@@ -29,6 +33,13 @@ export async function getSessionID(conversationID) {
     return sessionData[0]
 };
 
+export async function getSessionData(sessionID) {
+    const sessionDataResponse = await fetch(`get-session-data/${sessionID}`);
+    const sessionData = await sessionDataResponse.json();
+
+    return {sessionSenderID: sessionData[0], cipher: sessionData[1]}
+
+}
 export async function getSenderID() {
     //Gets sender ID and returns as a JSON response
     const idResponse = await fetch(`get-sender-id`);
@@ -49,11 +60,19 @@ export async function getCiphers(senderID, recipientID) {
 
 export async function getHashedPasswords(senderConversationID, recipientConversationID) {
     //Gets hashed password of sender and recipient
+
     const senderPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
     const senderPassword = await senderPasswordResponse.json();
 
-    const recipientPasswordResponse = await fetch(`get-XOR-hashed-password/${recipientConversationID}`);
-    const recipientPassword = await recipientPasswordResponse.json();
+    let recipientPassword;
+
+    if (recipientConversationID == null) {
+        recipientPassword = null
+    } else {
+        const recipientPasswordResponse = await fetch(`get-XOR-hashed-password/${recipientConversationID}`);
+        recipientPassword = await recipientPasswordResponse.json();
+    }
+
 
     return {senderHashedPassword: senderPassword, recipientHashedPassword: recipientPassword};
 
@@ -108,9 +127,7 @@ export function insertChatMessage(message, chatMessages) {
     }
 };
 
-export async function updateXORPassword(senderID, recipientID, senderConversationID, recipientConversationID) {
-
-    const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
+export async function updateXORPassword(cipher, senderConversationID, recipientConversationID) {
 
     let senderHashedPassword;
     let recipientHashedPassword;
@@ -132,7 +149,7 @@ export async function updateXORPassword(senderID, recipientID, senderConversatio
 
     //If sender and recipient have enabled XOR cipher and both hashed passwords are null, allows sender to
     //enter hashed password
-    if (senderCipher == "XOR" && recipientCipher == "XOR") {
+    if (cipher == "XOR") {
         if (senderHashedPassword == null && recipientHashedPassword == null) {
             //Shows add password modal
             $("#addPasswordModal").modal("show");
@@ -185,6 +202,7 @@ export async function updateXORPassword(senderID, recipientID, senderConversatio
 
 export async function appendMessage(message, senderID, chatMessages, AESKey) {
 
+
     //If cipher is AES-RSA, decrypts data with AES protocol
     if (message.cipher == "AES-RSA") {
         const bufferContent = await Base64toArrayBuffer(message.content);
@@ -200,8 +218,10 @@ export async function appendMessage(message, senderID, chatMessages, AESKey) {
     //If cipher is XOR, decrypts data with XOR-CBC protocol
     } else if (message.cipher == "XOR") {
 
+
         //Gets sender hashed password
         const {senderConnectionID} = await getConnectionID(message.recipientID);
+
         const senderConversationID = await getConversationID(senderConnectionID);
         const senderHashedPasswordResponse = await fetch(`get-XOR-hashed-password/${senderConversationID}`);
         const senderHashedPassword = await senderHashedPasswordResponse.json();
@@ -217,8 +237,8 @@ export async function appendMessage(message, senderID, chatMessages, AESKey) {
         const base64Data = await arrayBuffertoBase64(arrayData);
 
         message.content = atob(base64Data);
-
     }
+
 
     if (message.senderID == senderID) {
         const senderMessage = document.createElement("div");
@@ -228,7 +248,7 @@ export async function appendMessage(message, senderID, chatMessages, AESKey) {
         insertChatMessage(senderMessage, chatMessages);
     }
 
-    else if (message.recipientID == senderID) {
+    else {
         const recipientMessage = document.createElement("div");
         recipientMessage.className = "recipient-message";
         recipientMessage.textContent = message.content;
@@ -296,7 +316,7 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
 
         insertChatMessage(senderLink, chatMessages)
 
-    } else if (file.recipientID == senderID) {
+    } else {
 
         const recipientLink = document.createElement("a");
     
@@ -355,7 +375,7 @@ export async function appendImage(file, senderID, chatMessages, AESKey) {
 
         insertChatMessage(senderImage, chatMessages);
     
-    } else if (file.recipientID == senderID) {
+    } else {
         const recipientImage = document.createElement("img");
         recipientImage.className = "recipient-file";
         recipientImage.src = dataURL;

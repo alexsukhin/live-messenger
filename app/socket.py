@@ -35,10 +35,8 @@ class ChatSocketIO(SocketIO):
     def handle_message(self, sessionID, recipientID, encryptedContent, dataFormat, cipher, IV, salt):
         senderID = current_user.id
 
-        print(encryptedContent)
-
         #Stores message in messages database for retrieval when user opens chat
-        if insertMessage(sessionID, senderID, recipientID, encryptedContent, dataFormat, cipher, IV, salt):
+        if insertMessage(sessionID, encryptedContent, dataFormat, IV, salt):
         
             message = {
                 "sessionID": sessionID,
@@ -69,7 +67,7 @@ class ChatSocketIO(SocketIO):
         base64Data = base64.b64encode(encryptedContent).decode()
 
         #encrypted content is array buffer, base64 data is base 64 string
-        if insertFile(sessionID, senderID, recipientID, filePath, dataFormat, cipher, IV, salt):
+        if insertFile(sessionID, filePath, dataFormat, IV, salt):
             #Try to output real encrypted image
             with open(filePath, "wb") as file:
                 file.write(encryptedContent)
@@ -90,8 +88,7 @@ class ChatSocketIO(SocketIO):
             self.emit_message("file", file, f"room_{senderID}_{recipientID}")
             self.emit_message("file", file, f"room_{recipientID}_{senderID}")
         else:
-            print("Failed to insert file, possibly too big")
-            #fix file size issue
+            print("Failed to insert file, too big")
 
     def reset_notification_counter(self, recipientID):
         senderID = current_user.id

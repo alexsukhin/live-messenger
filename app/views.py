@@ -10,16 +10,16 @@ views = Blueprint("views", __name__)
 #Encrypted data is stored in routes
 
 #HTML route for inserting a new session into sessions database
-@views.route("/insert-session/<conversationID>", methods=["POST"])
+@views.route("/insert-session/<conversationID>/<senderID>/<recipientID>/<cipher>", methods=["POST"])
 @login_required
-def insert_session(conversationID):
-        data = request.get_json()
-        senderEncryptedAESKey = data.get("senderEncryptedAESKey")
-        recipientEncryptedAESKey = data.get("recipientEncryptedAESKey")
+def insert_session(conversationID, senderID, recipientID, cipher):
+    data = request.get_json()
+    senderEncryptedAESKey = data.get("senderEncryptedAESKey")
+    recipientEncryptedAESKey = data.get("recipientEncryptedAESKey")
 
-        insertSession(conversationID, senderEncryptedAESKey, recipientEncryptedAESKey)
+    insertSession(conversationID, senderID, recipientID, cipher, senderEncryptedAESKey, recipientEncryptedAESKey)
 
-        return jsonify({"message": "Session inserted successfully"})
+    return jsonify({"message": "Session inserted successfully"})
 
 #HTML route for inserting a new conversation into conversations database
 @views.route("/insert-conversation/<connectionID>")
@@ -107,6 +107,12 @@ def get_latest_session_id(conversationID):
     sessionID = getLatestSessionID(conversationID)
     return jsonify(sessionID)
 
+@views.route("/get-session-data/<sessionID>")
+@login_required
+def get_session_data(sessionID):
+    sessionID = getSessionData(sessionID)
+    return jsonify(sessionID)
+
 #HTML route for getting all messages within a conversation to retrieve chat history
 @views.route("/get-chat-messages/<recipientID>")
 @login_required
@@ -146,10 +152,10 @@ def get_RSA_private_key():
     RSAPrivateKey = getRSAPrivateKey(current_user.id)
     return jsonify(RSAPrivateKey[0])
 
-@views.route("/get-encrypted-AES-key/<userID>")
+@views.route("/get-encrypted-AES-key/<sessionID>")
 @login_required
-def get_encrypted_AES_key(userID):
-    encryptedAESKeyDict = getEncryptedAESKey(userID)
+def get_encrypted_AES_key(sessionID):
+    encryptedAESKeyDict = getEncryptedAESKey(sessionID)
 
     #Sends encryptedAESKeys as base64 strings in a dictionary
     return jsonify(encryptedAESKeyDict)
