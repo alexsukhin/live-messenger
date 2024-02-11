@@ -526,7 +526,7 @@ def getConnections(userID):
     cursor = conn.cursor()
 
     sql = """
-    SELECT RecipientID, Username FROM connections, users
+    SELECT RecipientID, Username, FirstName, LastName FROM connections, users
     WHERE (users.UserID = connections.RecipientID)
         AND (SenderID = %s)
     """
@@ -543,6 +543,8 @@ def getConnections(userID):
         connectionDict = {
             "userID": connection[0],
             "username": connection[1],
+            "firstName": connection[2],
+            "lastName": connection[3]
         }
         
         connectionsList.append(connectionDict)

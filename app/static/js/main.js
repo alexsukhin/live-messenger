@@ -61,13 +61,14 @@ async function updateChatList() {
         const chatList = document.getElementById("chat-list");
 
         //Reorders chat user elements in chatList based on desired order
-        //Implement a sort here tmrw!
         desiredOrder.forEach(userId => {
             const chatUserElement = chatUserElements.find(element => element.dataset.userId === userId.toString());
             if (chatUserElement) {
                 chatList.appendChild(chatUserElement);
             }
         });
+
+        
 
 
 
@@ -284,6 +285,13 @@ async function initiateSession(conversationID, senderID, recipientID, cipher, se
 };
 
 if (window.location.pathname == "/dashboard") {
+
+    const suggestionsButton = document.getElementById("suggestionButton");
+
+    suggestionsButton.addEventListener("click", () => {
+        window.location.href = "/recommendations";
+    });
+
     document.getElementById("message-form").addEventListener("submit", async (event) => {
         event.preventDefault();
 
@@ -610,11 +618,10 @@ if (window.location.pathname == "/dashboard") {
             await updateChatList();
         });
 
-        
         await updateChatList();
 
     });
-    };
+};
 
 if (window.location.pathname == "/profile") {
     document.getElementById("change-AES-cipher").addEventListener("click", async (event) => {
@@ -633,38 +640,89 @@ if (window.location.pathname == "/profile") {
 
 }
 
+if (window.location.pathname == "/recommendations") {
+    document.addEventListener("DOMContentLoaded", async () => {
 
-document.addEventListener("DOMContentLoaded", async () => {
-
-    let data;
-
-    async function addConnections(root, isRoot, depth, maxDepth) {
-        if (depth > maxDepth) {
-            return;
+        let data;
+    
+        async function addConnections(root, isRoot, depth, maxDepth) {
+            if (depth > maxDepth) {
+                return;
+            }
+    
+            if (isRoot) {
+                const response = await fetch(`/get-connections/${root.value}`);
+                data = await response.json();
+            } else {
+                const response = await fetch(`/get-connections/${root.value.userID}`);
+                data = await response.json();
+            }
+    
+            for (const connection of data) {
+                const child = root.addChild(connection)
+                await addConnections(child, false, depth + 1, maxDepth)
+            }
         }
+    
+        const senderID = await getSenderID();
+    
+    
+        const root = tree.addRoot(senderID)
+        await addConnections(root, true, 0, 2)
+        const recommendations = bfs(root)
 
-        if (isRoot) {
-            const response = await fetch(`/get-connections/${root.value}`);
-            data = await response.json();
-        } else {
-            const response = await fetch(`/get-connections/${root.value.userID}`);
-            data = await response.json();
+        const recommendationsList = document.getElementById("recommendations-list");
+
+        
+
+        for (const recommendation of recommendations) {
+
+            const chatUserElement = document.createElement("div");
+            chatUserElement.className = "recommendation-user";
+
+            const usernameElement = document.createElement("h");
+            const firstNameElement = document.createElement("h");   
+            const lastNameElement = document.createElement("h");
+            const friendElement = document.createElement("h");
+            const br = document.createElement("br");
+            const hr = document.createElement("hr");
+            const buttonElement = document.createElement("button");
+
+            usernameElement.textContent = recommendation.value.username;
+            firstNameElement.textContent = recommendation.value.firstName;
+            lastNameElement.textContent = recommendation.value.lastName;
+            friendElement.textContent = `Friend of ${recommendation.parent}`;
+
+            buttonElement.className = "btn";
+            buttonElement.textContent = "Add User";
+            buttonElement.id = "recommendation-button"
+            buttonElement.userID = recommendation.value.userID;
+            buttonElement.style.backgroundColor = "#9fc8ce";
+            buttonElement.style.color = "white";
+            buttonElement.style.float = "right";
+            buttonElement.style.marginTop = "-18px";
+
+            buttonElement.addEventListener("click", async (event) => {
+                event.preventDefault();
+        
+                const recipientID = event.target.userID;
+
+                const insertConversationResponse = await fetch(`/insert-connection/${recipientID}`);
+                const insertConversationData = await insertConversationResponse.json();
+                console.log(insertConversationData);
+
+                window.location.reload();
+            });
+
+            chatUserElement.appendChild(usernameElement);
+            chatUserElement.appendChild(br);
+            chatUserElement.appendChild(friendElement);
+            chatUserElement.appendChild(buttonElement)
+            chatUserElement.appendChild(hr);
+        
+            recommendationsList.appendChild(chatUserElement);
         }
+    
+    });
 
-        for (const connection of data) {
-            const child = root.addChild(connection)
-            await addConnections(child, false, depth + 1, maxDepth)
-        }
-    }
-
-    const senderID = await getSenderID();
-
-
-    const root = tree.addRoot(senderID)
-    await addConnections(root, true, 0, 2)
-    const values = bfs(root)
-    for (const value of values) {
-        console.log(value)
-    }
-
-});
+};

@@ -18,7 +18,7 @@ class RoutesManager():
 
     def validateLength(self, length, maxLength, errorMessage):
         if len(length) > maxLength:
-            flash(error_message, category="error")
+            flash(errorMessage, category="error")
             return True
         return False
 
@@ -147,6 +147,7 @@ class RoutesBlueprint(Blueprint):
         self.add_url_rule("/logout", "logout", self.logout)
         self.add_url_rule("/dashboard", "dashboard", self.dashboard, methods=["GET", "POST"])
         self.add_url_rule("/profile", "profile", self.profile, methods=["GET", "POST"])
+        self.add_url_rule("/recommendations", "recommendations", self.recommendations, methods = ["GET", "POST"])
 
     def default(self):
         return redirect("/login")
@@ -209,10 +210,14 @@ class RoutesBlueprint(Blueprint):
                 currentPassword = request.form.get("currentPassword")
                 newPassword = request.form.get("newPassword")
 
-                if self.routesManager.changePassword(password):
+                if self.routesManager.changePassword(currentPassword, newPassword):
                     return redirect("/profile")
 
         return render_template("profile.html", user=current_user)
+    
+    @login_required
+    def recommendations(self):
+        return render_template("recommendations.html", user=current_user)
 
 routesManager = RoutesManager(encryptionManager)
 routes = RoutesBlueprint("routes", __name__, routesManager) 

@@ -57,9 +57,10 @@ export function bfs(root) {
     while (!queue.isEmpty()) {
         const currentNode = queue.dequeue();
 
-        result.push(currentNode.value);
+        result.push(currentNode);
 
         for (const child of currentNode.children) {
+            child.parent = currentNode.value.username;
             if (!visited.has(child.value.userID)) {
                 visited.add(child.value.userID)
                 queue.enqueue(child)
@@ -67,22 +68,23 @@ export function bfs(root) {
         }
     }
 
+    console.log('result', result)
+
     //This filter function gets filters out the first node and the nodes children
     const filteredResult = result.filter(nodeValue => {
 
-        if (nodeValue.userID === root.value) {
+        if (nodeValue.value.userID === root.value) {
             return false;
         }
 
         for (const child of root.children) {
-            if (nodeValue.userID === child.value.userID) {
+            if (nodeValue.value.userID === child.value.userID) {
                 return false;
             }
         }
 
         return true;
-    })
-
+    }) 
 
     return filteredResult;
 }

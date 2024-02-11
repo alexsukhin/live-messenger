@@ -41,6 +41,13 @@ body {
   margin: 0px -12px -0px -12px;
 }
 
+.recommendation-user {
+  height: 80px;
+  padding: 10px 10px 0px 10px;
+  margin: 0px -12px -0px -12px;
+}
+
+
 .sender-message {
   width: 425px;
   min-height: auto;

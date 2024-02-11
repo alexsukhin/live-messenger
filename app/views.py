@@ -21,6 +21,13 @@ def insert_session(conversationID, senderID, recipientID, cipher):
 
     return jsonify({"message": "Session inserted successfully"})
 
+@views.route("/insert-connection/<recipientID>")
+@login_required
+def insert_connection(recipientID):
+    insertConnection(current_user.id, recipientID)
+
+    return jsonify({"message": "Connection inserted successfully"})
+
 #HTML route for inserting a new conversation into conversations database
 @views.route("/insert-conversation/<connectionID>")
 @login_required

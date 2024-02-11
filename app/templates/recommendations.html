@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendations{% endblock %}
+
+{% block content %}
+
+
+<style>
+    .top-flex {
+        display: flex;
+        background-color: #9fc8ce;
+        align-items: center;
+        height: 50px;
+    }
+
+    .recommendations-container {
+        background-color: #e9eeee;
+        height: 650px;
+        overflow-y: auto;
+    }
+</style>
+
+<div class="row" style="margin-top: 20px;">
+    <div class="col-12 top-flex justify-content-between">
+        <div class="p-2 white">Recommendations for you</div>
+        <a href="/dashboard" class="p-2 white">BACK</a>
+    </div>
+
+    <div class="col-12 recommendations-container">
+        <div class="col-3 recommendations-list" id="recommendations-list">
+            
+        </div>
+
+
+    </div>
+
+</div>
+
+{% endblock %}
