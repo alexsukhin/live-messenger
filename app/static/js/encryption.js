@@ -35,6 +35,8 @@ class EncryptionManager {
     return {publicKey: JSON.stringify(publicKey), privateKey: keyPair.privateKey}
   }
 
+
+  //test purposes only
   async exportPrivateKey(RSAPrivateKey) {
 
     const privateKey = await crypto.subtle.exportKey("jwk", RSAPrivateKey)
@@ -42,6 +44,7 @@ class EncryptionManager {
 
   }
 
+  //test purposes only
   async importPrivateKey(RSAPrivateKey) {
 
     const internalRSAPrivateKey = await crypto.subtle.importKey(
@@ -103,54 +106,22 @@ class EncryptionManager {
 
   }
 
-    async decryptAESKey(encryptedAESKey, RSAPrivateKey) {
+  async decryptAESKey(encryptedAESKey, RSAPrivateKey) {
 
-      //Decrypts AES key with private RSA key
-      const AESKey = await crypto.subtle.decrypt(
-        {
-          name: "RSA-OAEP"
-        },
-        RSAPrivateKey,
-        encryptedAESKey
-      )
-
-
-      return AESKey
-
-
-    }
-
-  async encryptData(plaintext, AESKey, IV) {
-
-    //Converts plaintext into array buffer
-    const textEncoder = new TextEncoder();
-    const data = textEncoder.encode(plaintext);
-
-    //Converts AES key array buffer into internal cryptoweb object
-    const internalAESKey = await crypto.subtle.importKey(
-      "raw",
-      AESKey,
+    //Decrypts AES key with private RSA key
+    const AESKey = await crypto.subtle.decrypt(
       {
-        name: "AES-CBC"
+        name: "RSA-OAEP"
       },
-      false,
-      ["encrypt"]
+      RSAPrivateKey,
+      encryptedAESKey
     )
 
-    //Encrypts data with AES key
-    const encryptedContent = await crypto.subtle.encrypt(
-      {
-        name: "AES-CBC",
-        iv: IV
-      },
-      internalAESKey,
-      data
-    )
+    return AESKey
 
-    return encryptedContent
   }
 
-  async encryptFile(plaintext, AESKey, IV) {
+  async encryptData(plaintext, AESKey, IV) {
 
     //Converts AES key array buffer into internal cryptoweb object
     const internalAESKey = await crypto.subtle.importKey(
@@ -175,6 +146,7 @@ class EncryptionManager {
 
     return encryptedContent
   }
+
 
   async decryptData(encryptedContent, AESKey, IV) {
 
@@ -203,31 +175,6 @@ class EncryptionManager {
 
   }
 
-  async decryptImage(encryptedContent, AESKey, IV) {
-
-    //Converts AES key array buffer into internal cryptoweb object
-    const internalAESKey = await crypto.subtle.importKey(
-      "raw",
-      AESKey,
-      {
-        name: "AES-CBC"
-      },
-      false,
-      ["decrypt"]
-    )
-
-    //Decrypts data with AES key
-    const decryptedContent = await crypto.subtle.decrypt(
-      {
-        name: "AES-CBC",
-        iv: IV
-      },
-      internalAESKey,
-      encryptedContent
-    )
-
-    return decryptedContent
-  }
 
   async deriveXORKey(password, salt) {
 
@@ -259,7 +206,7 @@ class EncryptionManager {
     
   }
 
-  //Pad using PCKS#7 padding
+  //Pad using PKCS#7 padding
   async padUint8Array(Uint8Data) { 
     //Calculates length of padding required
     const padLength = 16 - (Uint8Data.length % 16);
@@ -276,7 +223,7 @@ class EncryptionManager {
     return padData;
   }
 
-  //Unpad using PCKS#7 padding
+  //Unpad using PKCS#7 padding
   async unpadUint8Array(padData) {
     //Calculates length of pad used in data through value of last bit of array
     const padLength = padData[padData.length - 1];
@@ -290,7 +237,7 @@ class EncryptionManager {
   async XORCipher(Uint8Data, XORKey) {
 
     const Uint8Key = new Uint8Array(XORKey)
-
+      
     const result = new Uint8Array(Uint8Data.length)
 
     //Encrypts data array inputted with XOR encryption
@@ -303,7 +250,9 @@ class EncryptionManager {
     return result
   } 
 
-  async CBCEncrypt(Uint8Data, XORKey, IV) {
+  async CBCEncrypt(plaintext, XORKey, IV) {
+
+    const Uint8Data = await encryptionManager.padUint8Array(plaintext);
 
     //Initialises result array with length of input array
     let result = new Uint8Array(Uint8Data.length);
@@ -327,7 +276,7 @@ class EncryptionManager {
     return base64String
   }
 
-    // CBC Decryption
+  // CBC Decryption
   async CBCDecrypt(ciphertext, XORKey, IV) {  
 
 
@@ -347,10 +296,10 @@ class EncryptionManager {
 
       //Appends decrypted block to result
       result.set(XORBlock, i)
-      previousBlock = currentBlock;
+      previousBlock = currentBlock; 
     } 
 
-    //Unpads result with PCKS#7 padding
+    //Unpads result with PKCS#7 padding
     const unpaddedResult = await encryptionManager.unpadUint8Array(result);
 
     return unpaddedResult.buffer;

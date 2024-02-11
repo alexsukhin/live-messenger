@@ -1,6 +1,7 @@
 import {getConnectionID, getConversationID, getSessionID, getSessionData, getSenderID, getCiphers, getHashedPasswords, getEncryptedAESKeys, decryptBase64Key, arrayBuffertoBase64, Base64toArrayBuffer, updateXORPassword, appendMessage, appendImage, appendFile} from "./functions.js";
 import {encryptionManager} from "./encryption.js";
 import {openDatabase, saveKey, getPrivateKey} from "./indexeddb.js";
+import {tree, bfs} from "./connections.js";
 
 let sessionSocket;
 let AESKey;
@@ -59,7 +60,8 @@ async function updateChatList() {
         const desiredOrder = data.map(user => user.userID);
         const chatList = document.getElementById("chat-list");
 
-        // Reorders chat user elements in chatList based on desired order
+        //Reorders chat user elements in chatList based on desired order
+        //Implement a sort here tmrw!
         desiredOrder.forEach(userId => {
             const chatUserElement = chatUserElements.find(element => element.dataset.userId === userId.toString());
             if (chatUserElement) {
@@ -89,6 +91,8 @@ async function updateUser(recipientID) {
 
         const conversationCheckResponse = await fetch(`/check-conversation/${senderConnectionID}`);
         const conversationCheckData = await conversationCheckResponse.json();
+
+        //make it so if xor cipher, do not generate aes key
 
         //Generates AES key
         AESKey = await encryptionManager.generateAESKey();
@@ -222,9 +226,7 @@ async function initiateSession(conversationID, senderID, recipientID, cipher, se
     
             appendMessage(message, senderID, chatMessages, AESKey);
 
-        }
-
-    
+        }    
     })
 
 
@@ -284,7 +286,7 @@ async function initiateSession(conversationID, senderID, recipientID, cipher, se
 if (window.location.pathname == "/dashboard") {
     document.getElementById("message-form").addEventListener("submit", async (event) => {
         event.preventDefault();
-    
+
         const chatbox = document.getElementById("chatbox-user");
         const messageInput = document.getElementById("message");
         const plaintext = messageInput.value;
@@ -301,7 +303,7 @@ if (window.location.pathname == "/dashboard") {
         const senderConversationID = await getConversationID(senderConnectionID);
         const recipientConversationID = await getConversationID(recipientConnectionID);
         const sessionID = await getSessionID(senderConversationID);
-    
+
         const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
         const {senderHashedPassword, recipientHashedPassword} = await getHashedPasswords(senderConversationID, recipientConversationID)
 
@@ -315,28 +317,29 @@ if (window.location.pathname == "/dashboard") {
                 const salt = crypto.getRandomValues(new Uint8Array(16));
                 const base64Salt = await arrayBuffertoBase64(salt.buffer);
                 const cipher = "XOR";
-                
-                const textEncoder = new TextEncoder();
-                //Pads data array with PCKS#7 padding
-                const Uint8Data = await encryptionManager.padUint8Array(textEncoder.encode(plaintext));
 
                 //Derives XOR key from hashed password and message salt
                 const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, salt.buffer)
 
+                const textEncoder = new TextEncoder();
                 //Encrypts data using CBC decryption and converts data to array buffer
-                const encryptedContent = await encryptionManager.CBCEncrypt(Uint8Data, ArrayXORKey, IV)
+                const encryptedContent = await encryptionManager.CBCEncrypt((textEncoder.encode(plaintext)), ArrayXORKey, IV)
 
                 //Emits message to flask server
                 sessionSocket.emit('message', sessionID, recipientID, encryptedContent, dataFormat, cipher, base64IV, base64Salt);
-    
+
             }
         } else {
             const salt = null;
             const cipher = "AES-RSA";
 
+            //Converts plaintext into array buffer
+            const textEncoder = new TextEncoder();
+            const data = textEncoder.encode(plaintext);
+
             //Encrypts plaintext with global AES key
-            const bufferEncryptedContent = await encryptionManager.encryptData(plaintext, AESKey, IV);
-    
+            const bufferEncryptedContent = await encryptionManager.encryptData(data, AESKey, IV);
+
             //Converts data and IV into base64 strings
             const base64EncryptedContent = await arrayBuffertoBase64(bufferEncryptedContent);
 
@@ -344,24 +347,24 @@ if (window.location.pathname == "/dashboard") {
             sessionSocket.emit('message', sessionID, recipientID, base64EncryptedContent, dataFormat, cipher, base64IV, salt);
 
         }
-    
+
         //Increments notification on recipients side by one
         sessionSocket.emit('increment-notification', recipientID);
 
-    
+
     });
     
     document.getElementById("file-upload").addEventListener("change", async (event) => {
         event.preventDefault()
-    
+
         const chatbox = document.getElementById("chatbox-user");
         const fileInput = document.getElementById("file-input");
         const file = fileInput.files[0];
         const fileName = file.name;
-    
+
         const senderID = await getSenderID();
         const recipientID = chatbox.dataset.recipientId;
-    
+
         const {senderConnectionID, recipientConnectionID} = await getConnectionID(recipientID);
         const senderConversationID = await getConversationID(senderConnectionID);
         const recipientConversationID = await getConversationID(recipientConnectionID);
@@ -369,17 +372,17 @@ if (window.location.pathname == "/dashboard") {
 
         const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
         const {senderHashedPassword, recipientHashedPassword} = await getHashedPasswords(senderConversationID, recipientConversationID)
-    
+
         //Randomly generates IV and converts to base64 string
         const IV = crypto.getRandomValues(new Uint8Array(16));
         const base64IV = await arrayBuffertoBase64(IV);
-    
+
         const dataFormat = file.type;
         //Represents accepted format types
         const acceptedFormat = ["text/plain", "application/pdf", "image/png", "image/jpeg"];
-    
+
         const reader = new FileReader();
-    
+
         reader.onload = async (data) => {
             //Reads data as an array buffer
             const fileData = data.target.result;
@@ -390,13 +393,11 @@ if (window.location.pathname == "/dashboard") {
                     const base64Salt = await arrayBuffertoBase64(salt.buffer);
                     const cipher = "XOR";
 
-                    const Uint8Data = await encryptionManager.padUint8Array(new Uint8Array(fileData));
-
                     //Derives XOR key from hashed password and message salt
                     const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, salt.buffer)
                     
                     //Encrypts data using CBC decryption and converts data to array buffer
-                    const base64EncryptedFileData = await encryptionManager.CBCEncrypt(Uint8Data, ArrayXORKey, IV)
+                    const base64EncryptedFileData = await encryptionManager.CBCEncrypt((new Uint8Array(fileData)), ArrayXORKey, IV)
 
                     const encryptedFileData = await Base64toArrayBuffer(base64EncryptedFileData)
 
@@ -408,13 +409,13 @@ if (window.location.pathname == "/dashboard") {
                 const salt = null;
                 const cipher = "AES-RSA";
 
-                const encryptedFileData = await encryptionManager.encryptFile(fileData, AESKey, IV);
+                const encryptedFileData = await encryptionManager.encryptData(fileData, AESKey, IV);
             
                 //Emits encrypted array buffer of bytes to python server
                 sessionSocket.emit('file', sessionID, recipientID, encryptedFileData, fileName, dataFormat, cipher, base64IV, salt);
             };
         }
-    
+
         if (acceptedFormat.includes(dataFormat)) {
             console.log("Accepted");
             //If file format is an accepted format, emits file to server as an array buffer
@@ -422,14 +423,12 @@ if (window.location.pathname == "/dashboard") {
         } else {
             console.log("Not accepted");
         }
-    
+
         sessionSocket.emit('increment-notification', recipientID);
-    
-    
-    
+
     });
 
-    
+
     document.addEventListener("DOMContentLoaded", async () => {
 
         //Disconnects user from websocket if they refresh the page or go to a different page
@@ -444,6 +443,7 @@ if (window.location.pathname == "/dashboard") {
         const idResponse = await fetch(`get-RSA-public-key/${senderID}`);
         const RSAPublicKey = await idResponse.json();
 
+        //Gets private key from indexedDB
         const RSAPrivateKey = await getPrivateKey(senderID);
 
         //This code below to generate RSA key pairs is run only once once a user creates their account
@@ -516,7 +516,7 @@ if (window.location.pathname == "/dashboard") {
             //Displays chatbox
             introduction.style.display = "none";
             chatbox.style.display = "block";
-    
+
             //Clears previous chat messages in HTML
             const chatMessages = document.getElementById("chatbox-messages");
             chatMessages.innerHTML = "";
@@ -544,19 +544,19 @@ if (window.location.pathname == "/dashboard") {
                 if (message.cipher == "AES-RSA") {
                     const idResponse = await fetch(`get-encrypted-AES-key/${message.sessionID}`);
                     const base64EncryptedAESKeys = await idResponse.json();
-    
+
                     let base64EncryptedAESKey;
-    
+
                     if (message.senderID == senderID) {
-    
+
                         base64EncryptedAESKey = base64EncryptedAESKeys.senderEncryptedAESKey;
             
                     } else if (message.senderID == recipientID) {
-    
+
                         base64EncryptedAESKey = base64EncryptedAESKeys.recipientEncryptedAESKey;
-    
+
                     };
-    
+
                     //If program has found previous stored encrypted AES key, gets decrypted AES key from map
                     //preventing program from re-decrypting already decrypted AES key
                     if (AESKeyDict.has(base64EncryptedAESKey)) {
@@ -566,14 +566,14 @@ if (window.location.pathname == "/dashboard") {
                     } else {
                         //Gets RSA Private key from IndexedDB Database
                         const RSAPrivateKey = await getPrivateKey(senderID);
-    
+
                         const encryptedAESKey = await Base64toArrayBuffer(base64EncryptedAESKey);
                         
                         const AESKey = await encryptionManager.decryptAESKey(encryptedAESKey.buffer, RSAPrivateKey);
-    
+
                         //Pushes decrypted AES key to map
                         AESKeyDict.set(base64EncryptedAESKey, AESKey);
-    
+
                         await processMessage(AESKey, message);
                     }
 
@@ -586,35 +586,35 @@ if (window.location.pathname == "/dashboard") {
             async function processMessage(AESKey, message) {
 
                 if (message.dataFormat == "text/short") {
-    
+
                     await appendMessage(message, senderID, chatMessages, AESKey);
-    
+
                 } else if (message.dataFormat == "text/plain" || message.dataFormat == "application/pdf") {
-    
+
                     await appendFile(message, senderID, chatMessages, AESKey);
-    
+
                 } else if (message.dataFormat == "image/png" || message.dataFormat == "image/jpeg") {
-    
+
                     await appendImage(message, senderID, chatMessages, AESKey);
-    
+
                 } else {
                     console.log("Invalid file type");
                 }
-    
-    
+
+
             };
         
         });
         
-        document.getElementById("add-user-button").addEventListener("click", () => {
-            updateChatList();
+        document.getElementById("add-user-button").addEventListener("click", async () => {
+            await updateChatList();
         });
 
         
-        updateChatList();
+        await updateChatList();
 
     });
-};
+    };
 
 if (window.location.pathname == "/profile") {
     document.getElementById("change-AES-cipher").addEventListener("click", async (event) => {
@@ -632,3 +632,39 @@ if (window.location.pathname == "/profile") {
     });
 
 }
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    let data;
+
+    async function addConnections(root, isRoot, depth, maxDepth) {
+        if (depth > maxDepth) {
+            return;
+        }
+
+        if (isRoot) {
+            const response = await fetch(`/get-connections/${root.value}`);
+            data = await response.json();
+        } else {
+            const response = await fetch(`/get-connections/${root.value.userID}`);
+            data = await response.json();
+        }
+
+        for (const connection of data) {
+            const child = root.addChild(connection)
+            await addConnections(child, false, depth + 1, maxDepth)
+        }
+    }
+
+    const senderID = await getSenderID();
+
+
+    const root = tree.addRoot(senderID)
+    await addConnections(root, true, 0, 2)
+    const values = bfs(root)
+    for (const value of values) {
+        console.log(value)
+    }
+
+});

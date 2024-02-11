@@ -1,9 +1,6 @@
 import hashlib
 from . import mysql
 
-
-#Sanitize user inputs - cant write question mark in message for example, injection attacks  
-
 #INSERT queries
 
 #Inserts a new user on signup into users database
@@ -55,7 +52,7 @@ def insertFile(sessionID, filePath, dataFormat, IV, salt):
     conn = mysql.connection
     cursor = conn.cursor()
 
-    sql = "INSERT INTO messages (SessionID, FilePath, DataFormat, Cipher, IV, Salt) VALUES (%s, %s, %s, %s, %s);"
+    sql = "INSERT INTO messages (SessionID, FilePath, DataFormat, IV, Salt) VALUES (%s, %s, %s, %s, %s);"
     values = (sessionID, filePath, dataFormat, IV, salt)
     cursor.execute(sql, values)
 
@@ -129,45 +126,6 @@ def updatePassword(userID, password):
     conn.commit()
     cursor.close()
 
-#Updates null RSA placeholder with public RSA key
-def updateRSAPublicKey(userID, publicRSAKey):
-
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = "UPDATE users SET PublicRSAKey = %s WHERE UserID = %s;"
-    values = (publicRSAKey, userID)
-    cursor.execute(sql, values)
-    
-    conn.commit()
-    cursor.close()
-
-def updateRSAPrivateKey(userID, privateRSAKey):
-    
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = "UPDATE users SET PrivateRSAKey = %s WHERE UserID = %s;"
-    values = (privateRSAKey, userID)
-    cursor.execute(sql, values)
-    
-    conn.commit()
-    cursor.close()
-
-def updateRSAPrivateKeyNULL(userID):
-
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = "UPDATE users SET PrivateRSAKey = NULL WHERE UserID = %s;"
-    values = (userID)
-    cursor.execute(sql, values)
-    
-    conn.commit()
-    cursor.close()
-
-    
-
 #Updates the timestamp in conversations database
 def updateConversation(conversationID):
     conn = mysql.connection
@@ -207,6 +165,33 @@ def resetNotificationCounter(senderID, recipientID):
     conn.commit()
     cursor.close()
 
+#Updates null RSA placeholder with public RSA key
+def updateRSAPublicKey(userID, publicRSAKey):
+
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET PublicRSAKey = %s WHERE UserID = %s;"
+    values = (publicRSAKey, userID)
+    cursor.execute(sql, values)
+    
+    conn.commit()
+    cursor.close()
+
+#test purpose
+def updateRSAPrivateKey(userID, privateRSAKey):
+    
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = "UPDATE users SET PrivateRSAKey = %s WHERE UserID = %s;"
+    values = (privateRSAKey, userID)
+    cursor.execute(sql, values)
+    
+    conn.commit()
+    cursor.close()
+
+#Sets cipher in users database to AES-RSA
 def updateAESCipher(senderID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -220,7 +205,7 @@ def updateAESCipher(senderID):
     conn.commit()
     cursor.close()
 
-    
+#Sets cipher in users database to XOR
 def updateXORCipher(senderID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -234,12 +219,13 @@ def updateXORCipher(senderID):
     conn.commit()
     cursor.close()
 
+#Updates hashed XOR password to certain hashed password
 def updateXORHashedPassword(XORHashedPassword, conversationID):
     conn = mysql.connection
     cursor = conn.cursor()
 
     sql = """
-    UPDATE conversations SET XorHashedPassword = %s WHERE ConversationID = %s
+    UPDATE conversations SET XORHashedPassword = %s WHERE ConversationID = %s
     """
     values = (XORHashedPassword, conversationID)
     cursor.execute(sql, values)
@@ -262,7 +248,24 @@ def getUser(username):
     user = cursor.fetchone()
 
     cursor.close()
+    
+    print(user)
     return user
+
+#Gets cipher currently in use from user
+def getCipher(userID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT Cipher FROM users WHERE UserID = %s
+    """
+    cursor.execute(sql, (userID,))
+    cipher = cursor.fetchone()
+
+    cursor.close()
+
+    return cipher
 
 #Checks if user already has a connection with another user
 def connectionExists(senderID, recipientID):
@@ -342,6 +345,21 @@ def getLatestSessionID(conversationID):
     cursor.close()
 
     return sessionID    
+    
+#Gets senderID and Cipher from a sessionID
+def getSessionData(sessionID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT SenderID, Cipher FROM sessions WHERE SessionID = %s
+    """
+    cursor.execute(sql, (sessionID,))
+    sessionData = cursor.fetchone()
+
+    cursor.close()
+
+    return sessionData
 
 #Gets notification counter from connections database
 def getNotificationCounter(senderID, recipientID):
@@ -382,7 +400,7 @@ def getChatMessages(senderID, recipientID):
 
     messagesList = []
 
-    #Appends invidual messages each in a dictionary format into a list
+    #Appends individual messages each in a dictionary format into a list
     for message in messages:
         messageDict = {
             "sessionID": message[0],
@@ -410,7 +428,7 @@ def getChatUsers(userID):
     FROM users u
     JOIN connections c ON (c.RecipientID = u.UserID)
     LEFT JOIN conversations co ON (c.connectionID = co.connectionID)
-    WHERE (c.SenderID = %s) AND u.UserID != %s
+    WHERE   (c.SenderID = %s) AND u.UserID != %s
     ORDER BY NotificationCounter DESC, co.Timestamp DESC, c.Timestamp DESC;"""
     cursor.execute(sql, (userID, userID,))
     chatUsers = cursor.fetchall()
@@ -419,7 +437,7 @@ def getChatUsers(userID):
     
     chatUsersList = []
 
-    #Appends invidual users each in a dictionary format into a list
+    #Appends individual users each in a dictionary format into a list
     for user in chatUsers:
         chatUsersDict = {
             "userID": user[0],
@@ -488,34 +506,7 @@ def getEncryptedAESKey(sessionID):
 
     return AESKeyDict
 
-def getSessionData(sessionID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """
-    SELECT SenderID, Cipher FROM sessions WHERE SessionID = %s
-    """
-    cursor.execute(sql, (sessionID,))
-    sessionData = cursor.fetchone()
-
-    cursor.close()
-
-    return sessionData
-
-def getCipher(userID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """
-    SELECT Cipher FROM users WHERE UserID = %s
-    """
-    cursor.execute(sql, (userID,))
-    cipher = cursor.fetchone()
-
-    cursor.close()
-
-    return cipher
-
+#Gets hashed XOR Password
 def getXORHashedPassword(conversationID):
     conn = mysql.connection
     cursor = conn.cursor()
@@ -529,4 +520,32 @@ def getXORHashedPassword(conversationID):
     cursor.close()
 
     return XORHashedPassword
+
+def getConnections(userID):
+    conn = mysql.connection
+    cursor = conn.cursor()
+
+    sql = """
+    SELECT RecipientID, Username FROM connections, users
+    WHERE (users.UserID = connections.RecipientID)
+        AND (SenderID = %s)
+    """
+
+    cursor.execute(sql, (userID,))
+    connections = cursor.fetchall()
+
+    cursor.close()
+
+    connectionsList = []
+
+    #Appends individual users each in a dictionary format into a list
+    for connection in connections:
+        connectionDict = {
+            "userID": connection[0],
+            "username": connection[1],
+        }
+        
+        connectionsList.append(connectionDict)
+
+    return connectionsList
 

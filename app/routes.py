@@ -26,7 +26,7 @@ class RoutesManager():
 
         existingUser = getUser(username)
 
-        #If any existing checks return true, flashes message and returns out of signup function
+        #If any existing checks return true, flashes error message and returns out of signup function
         if (
             self.userExists(username) or
             self.validateLength(username, 15, "Username must be 15 characters or less.") or
@@ -41,7 +41,7 @@ class RoutesManager():
         #Inserts user into user database
         insertUser(username, hashedPassword, firstName, lastName)
         
-        #Logs user into account and redirects user to dashboard page if user inserted into database
+        #Logs user into account and redirects user to dashboard page if user has been inserted into database
         newUser = getUser(username)
 
         if newUser:
@@ -61,7 +61,7 @@ class RoutesManager():
 
             if user is None:
                 flash("Username not found.", category="error")
-            #Checks if inputted password doesn't equal to passsword stored in user database
+            #Checks if inputted password doesn't equal to password stored in user database
             elif loginHashedPassword != user[2]:
                 flash("Incorrect password.", category="error")
             #Logs user into account and redirects user to dashboard page
@@ -215,4 +215,4 @@ class RoutesBlueprint(Blueprint):
         return render_template("profile.html", user=current_user)
 
 routesManager = RoutesManager(encryptionManager)
-routes = RoutesBlueprint("routes", __name__, routesManager)
+routes = RoutesBlueprint("routes", __name__, routesManager) 

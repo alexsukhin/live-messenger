@@ -41,8 +41,8 @@ export function saveKey(RSAPrivateKey, userID) {
         const db = globalDB;
 
         if (!db) {
-            console.error("Database not initialized.");
-            return Promise.reject("Database not initialized.");
+            console.error("Database not initialised.");
+            return Promise.reject("Database not initialised.");
         }
     
         //Accesses Key storage
@@ -79,8 +79,8 @@ export function getPrivateKey(userID) {
         const db = globalDB;
 
         if (!db) {
-            console.error("Database not initialized.");
-            return Promise.reject("Database not initialized.");
+            console.error("Database not initialised.");
+            return Promise.reject("Database not initialised.");
         }
 
 

@@ -20,8 +20,8 @@ try:
     mysql = MySQL(app)
 except Exception as e:
     print("Error connecting to the database:", e)
-    # Add better error handling here
 
+mysql = MySQL()
 
 from .socket import socketio
 from .views import views
@@ -39,6 +39,8 @@ login_manager.login_view = "routes.login"
 @login_manager.user_loader
 def loadUser(userID):
 
+    print('test!')
+
     conn = mysql.connection
     cursor = conn.cursor()
 
@@ -52,6 +54,3 @@ def loadUser(userID):
         return User(*user)
     else:
         return None
-
-
-mysql = MySQL()

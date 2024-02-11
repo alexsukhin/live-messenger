@@ -174,3 +174,10 @@ def get_XOR_hashed_password(conversationID):
 
     return jsonify(XORHashedPassword[0])
     
+
+@views.route("/get-connections/<userID>")
+@login_required
+def get_connections(userID):
+
+    connections = getConnections(userID)
+    return jsonify(connections)

@@ -278,7 +278,6 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
         const bufferSalt = await Base64toArrayBuffer(file.salt);
         const bufferIV = await Base64toArrayBuffer(file.IV);
 
-
         //Derives XOR key from hashed password and message salt
         const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, bufferSalt.buffer);
 
@@ -293,7 +292,6 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
     const filePath = file.filePath
     const fileName = (filePath.split("%"))[1];
 
-
     let blob;
 
     //Assigns plaintext or bytes to blob depending on file format
@@ -302,8 +300,6 @@ export async function appendFile(file, senderID, chatMessages, AESKey) {
     } else if (file.dataFormat == "application/pdf") {
         blob = new Blob([file.content], {type: "application/pdf"});
     }   
-
-
     
     if (file.senderID == senderID) {
 
@@ -337,7 +333,7 @@ export async function appendImage(file, senderID, chatMessages, AESKey) {
         const bufferContent = await Base64toArrayBuffer(file.content);
         const bufferIV = await Base64toArrayBuffer(file.IV);
         
-        const bufferData = await encryptionManager.decryptImage(bufferContent.buffer, AESKey, bufferIV);
+        const bufferData = await encryptionManager.decryptData(bufferContent.buffer, AESKey, bufferIV);
         
         const base64Data = await arrayBuffertoBase64(bufferData);
 
@@ -361,7 +357,6 @@ export async function appendImage(file, senderID, chatMessages, AESKey) {
         const base64Data = await arrayBuffertoBase64(bufferData)
 
         file.content = base64Data;
-
 
     }
 
