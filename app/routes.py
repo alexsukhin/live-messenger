@@ -22,15 +22,39 @@ class RoutesManager():
             return True
         return False
 
+    def isEmpty(self, length, errorMessage):
+        if len(length) == 0:
+            flash(errorMessage, category="error")
+            return True
+        return False
+    
+    def validateForm(self, input, maxLength, format):
+        if len(input) > maxLength:
+            flash(f"{format} must be {maxLength} characters or less.", category="error")
+            return True
+        elif len(input) == 0:
+            flash(f"{format} cannot be empty.", category="error")
+            return True
+        elif format == "First name" or format == "Last name":
+            if not input.isalpha():
+                flash(f"{format} must be alphabetic.", category="error")
+                return True
+        elif format == "Username" or format == "Password":
+            if not input.isalnum():
+                flash(f"{format} must be alphanumeric.", category="error")
+                return True
+        return False
+                
+
     def signup(self, firstName, lastName, username, password):
 
         #If any existing checks return true, flashes error message and returns out of signup function
         if (
             self.userExists(username) or
-            self.validateLength(username, 15, "Username must be 15 characters or less.") or
-            self.validateLength(password, 50, "Password must be 50 characters or less.") or
-            self.validateLength(firstName, 25, "First name must be 25 characters or less.") or
-            self.validateLength(lastName, 25, "Last name must be 25 characters or less.")
+            self.validateForm(username, 15, "Username") or
+            self.validateForm(password, 50, "Password") or
+            self.validateForm(firstName, 25, "First name") or
+            self.validateForm(lastName, 25, "Last name")
         ):
             return
 
@@ -98,8 +122,8 @@ class RoutesManager():
 
     def changeName(self, firstName, lastName):
         if (
-            self.validateLength(firstName, 25, "First name must be 25 characters or less.") or
-            self.validateLength(lastName, 25, "Last name must be 25 characters or less.")
+            self.validateForm(firstName, 25, "First name") or
+            self.validateForm(lastName, 25, "Last name")
         ):
             return
 
@@ -111,7 +135,7 @@ class RoutesManager():
 
         if (
             self.userExists(username) or
-            self.validateLength(username, 15, "Username must be 15 characters or less.")
+            self.validateForm(username, 15, "Username")
         ):
             return
 
@@ -125,13 +149,12 @@ class RoutesManager():
 
         if currentHashedPassword != current_user.password:
             flash("Your current password is incorrect.", category="error")
-        elif len(newPassword) > 50:
-            flash("Password must be 50 characters or less.", category="error")
+        elif self.validateForm(newPassword, 50, "Password"):
+            print("Error!")
         else:
             updatePassword(current_user.id, newPassword)
             flash("Successfully updated password!", category="success")
             return True
-        
         return False
 
 class RoutesBlueprint(Blueprint):

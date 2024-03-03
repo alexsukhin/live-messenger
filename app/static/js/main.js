@@ -95,36 +95,40 @@ async function updateUser(recipientID) {
 
         //make it so if xor cipher, do not generate aes key
 
-        //Generates AES key
-        AESKey = await encryptionManager.generateAESKey();
-
-
-        //Fetches sender public RSA key in preparation for encrypting sender AES Key
-        const senderIDResponse = await fetch(`get-RSA-public-key/${senderID}`);
-        const senderRSAPublicKey = await senderIDResponse.json().then(JSON.parse);
-
-        //Fetches recipient public RSA key in preparation for encrypting recipient AES key
-        const recipientIDResponse = await fetch(`get-RSA-public-key/${recipientID}`);
-        const recipientRSAPublicKey = await recipientIDResponse.json().then(JSON.parse);
-
-        //Encrypts AES keys and converts them to base64 strings
-        const senderEncryptedAESKeyBuffer = await encryptionManager.encryptAESKey(AESKey, senderRSAPublicKey);
-        const senderEncryptedAESKey = await arrayBuffertoBase64(senderEncryptedAESKeyBuffer);
-
-        const recipientEncryptedAESKeyBuffer = await encryptionManager.encryptAESKey(AESKey, recipientRSAPublicKey);
-        const recipientEncryptedAESKey = await arrayBuffertoBase64(recipientEncryptedAESKeyBuffer);
-
         const {senderCipher, recipientCipher} = await getCiphers(senderID, recipientID);
 
         let cipher;
+        let senderEncryptedAESKey;
+        let recipientEncryptedAESKey;
 
         //If sender and recipient have enabled XOR cipher, cipher used for communication is XOR
         if (senderCipher == "XOR" && recipientCipher == "XOR") {
             cipher = "XOR"
+            senderEncryptedAESKey = null;
+            recipientEncryptedAESKey = null;
         } else {
             cipher = "AES-RSA"
+
+            //Generates AES key
+            AESKey = await encryptionManager.generateAESKey();
+
+
+            //Fetches sender public RSA key in preparation for encrypting sender AES Key
+            const senderIDResponse = await fetch(`get-RSA-public-key/${senderID}`);
+            const senderRSAPublicKey = await senderIDResponse.json().then(JSON.parse);
+
+            //Fetches recipient public RSA key in preparation for encrypting recipient AES key
+            const recipientIDResponse = await fetch(`get-RSA-public-key/${recipientID}`);
+            const recipientRSAPublicKey = await recipientIDResponse.json().then(JSON.parse);
+
+            //Encrypts AES keys and converts them to base64 strings
+            const senderEncryptedAESKeyBuffer = await encryptionManager.encryptAESKey(AESKey, senderRSAPublicKey);
+            senderEncryptedAESKey = await arrayBuffertoBase64(senderEncryptedAESKeyBuffer);
+
+            const recipientEncryptedAESKeyBuffer = await encryptionManager.encryptAESKey(AESKey, recipientRSAPublicKey);
+            recipientEncryptedAESKey = await arrayBuffertoBase64(recipientEncryptedAESKeyBuffer);
+
         }
-        
 
         //Checks if a conversation between two users has been created before
         if (!conversationCheckData) {
@@ -208,66 +212,81 @@ async function initiateSession(conversationID, senderID, recipientID, cipher, se
 
     sessionSocket.on('message', async (message) => {
 
+        const {sessionSenderID, cipher } = await getSessionData(message.sessionID);
+
         const chatMessages = document.getElementById("chatbox-messages");
-        //Gets dictionary of encrypted AES keys
-        const base64EncryptedAESKeys = await getEncryptedAESKeys(message.sessionID);
 
-        if (message.senderID == senderID) {
 
-            //Gets sender encrypted AES key from dictionary and decrypts AES key
-            const base64EncryptedAESKey = await base64EncryptedAESKeys.senderEncryptedAESKey
-            const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
+        if (cipher == "XOR") {
+           const AESKey = null; 
 
-            appendMessage(message, senderID, chatMessages, AESKey);
+        } else {
 
-        } else if (message.senderID == recipientID) {
+            //Gets dictionary of encrypted AES keys
+            const base64EncryptedAESKeys = await getEncryptedAESKeys(message.sessionID);
 
-            //Gets recipient encrypted AES key from dictionary and decrypts AES key
-            const base64EncryptedAESKey = await base64EncryptedAESKeys.recipientEncryptedAESKey
-            const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
-    
-            appendMessage(message, senderID, chatMessages, AESKey);
+            if (message.senderID == senderID) {
 
-        }    
+                //Gets sender encrypted AES key from dictionary and decrypts AES key
+                const base64EncryptedAESKey = await base64EncryptedAESKeys.senderEncryptedAESKey
+                const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
+            } else if (message.senderID == recipientID) {
+
+                //Gets recipient encrypted AES key from dictionary and decrypts AES key
+                const base64EncryptedAESKey = await base64EncryptedAESKeys.recipientEncryptedAESKey
+                const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
+
+            }    
+
+        }
+
+        appendMessage(message, senderID, chatMessages, AESKey);
     })
 
 
 
     sessionSocket.on('file', async (file) => {
 
+        const {sessionSenderID, cipher } = await getSessionData(file.sessionID);
+
         const chatMessages = document.getElementById("chatbox-messages");
-        //Gets dictionary of encrypted AES keys
-        const base64EncryptedAESKeys = await getEncryptedAESKeys(file.sessionID);
+        let AESKey;
 
-        if (file.senderID == senderID) {
-            //Gets sender encrypted AES key from dictionary and decrypts AES key
-            const base64EncryptedAESKey = await base64EncryptedAESKeys.senderEncryptedAESKey
-            const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
-            
-            processMessage(AESKey);
+        if (cipher == "XOR") {
+            AESKey = null; 
 
-        } else if (file.senderID == recipientID) {
-            //Gets recipient encrypted AES key from dictionary and decrypts AES key
-            const base64EncryptedAESKey = await base64EncryptedAESKeys.recipientEncryptedAESKey
-            const AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
+        } else {
 
-            processMessage(AESKey);
+            //Gets dictionary of encrypted AES keys
+            const base64EncryptedAESKeys = await getEncryptedAESKeys(file.sessionID);
+
+            if (file.senderID == senderID) {
+                //Gets sender encrypted AES key from dictionary and decrypts AES key
+                const base64EncryptedAESKey = await base64EncryptedAESKeys.senderEncryptedAESKey
+                AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
+
+            } else if (file.senderID == recipientID) {
+                //Gets recipient encrypted AES key from dictionary and decrypts AES key
+                const base64EncryptedAESKey = await base64EncryptedAESKeys.recipientEncryptedAESKey
+                AESKey = await decryptBase64Key(senderID, base64EncryptedAESKey)
+        }
 
         }
+
+        await processMessage(AESKey);
 
         async function processMessage(AESKey) {
             if (file.dataFormat == "text/plain" || file.dataFormat == "application/pdf") {
                 appendFile(file, senderID, chatMessages, AESKey)
-                
+
             } else if (file.dataFormat == "image/png" || file.dataFormat == "image/jpeg") {
                 appendImage(file, senderID, chatMessages, AESKey)
-        
+
             }
-
         }
-
     })
 
+        
 
 
     sessionSocket.on('reset-notification', () => {
