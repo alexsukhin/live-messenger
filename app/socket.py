@@ -1,6 +1,6 @@
 from flask_socketio import SocketIO, join_room
 from flask_login import current_user
-from .queries import insertMessage, insertFile, incrementNotificationCounter, resetNotificationCounter, getNotificationCounter
+from .queries import insertMessage, insertFile, incrementNotificationCounter, resetNotificationCounter
 import base64
 from datetime import datetime
 

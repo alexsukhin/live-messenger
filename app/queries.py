@@ -361,24 +361,6 @@ def getSessionData(sessionID):
 
     return sessionData
 
-#Gets notification counter from connections database
-def getNotificationCounter(senderID, recipientID):
-    conn = mysql.connection
-    cursor = conn.cursor()
-
-    sql = """SELECT NotificationCounter
-    FROM connections
-    WHERE (SenderID = %s AND RecipientID = %s)
-    """
-
-    values = (recipientID, senderID)
-    cursor.execute(sql, values)
-    notificationCounter = cursor.fetchone()
-
-    cursor.close()
-
-    return notificationCounter
-
 #Selects all messages within a conversation to retrieve chat history
 def getChatMessages(senderID, recipientID):
     conn = mysql.connection
@@ -550,4 +532,3 @@ def getConnections(userID):
         connectionsList.append(connectionDict)
 
     return connectionsList
-

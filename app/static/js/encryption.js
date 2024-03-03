@@ -123,6 +123,7 @@ class EncryptionManager {
 
   async encryptData(plaintext, AESKey, IV) {
 
+
     //Converts AES key array buffer into internal cryptoweb object
     const internalAESKey = await crypto.subtle.importKey(
       "raw",
@@ -143,6 +144,7 @@ class EncryptionManager {
       internalAESKey,
       plaintext
     )
+
 
     return encryptedContent
   }

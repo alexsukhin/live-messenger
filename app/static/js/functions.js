@@ -1,5 +1,5 @@
 import {encryptionManager} from "./encryption.js";
-import {saveKey, getPrivateKey} from "./indexeddb.js";
+import {getPrivateKey} from "./indexeddb.js";
 
 
 export async function getConnectionID(recipientID) {
@@ -7,9 +7,6 @@ export async function getConnectionID(recipientID) {
     //Gets connection IDs of sender and recipient and returns as a JSON response
     const connectionResponse = await fetch(`/get-connection-id/${recipientID}`);
     const connectionData = await connectionResponse.json();
-
-    //data null
-
 
     return {senderConnectionID: connectionData[0][0], recipientConnectionID: connectionData[1][0] }
 };
@@ -38,8 +35,8 @@ export async function getSessionData(sessionID) {
     const sessionData = await sessionDataResponse.json();
 
     return {sessionSenderID: sessionData[0], cipher: sessionData[1]}
-
 }
+
 export async function getSenderID() {
     //Gets sender ID and returns as a JSON response
     const idResponse = await fetch(`get-sender-id`);
@@ -48,7 +45,7 @@ export async function getSenderID() {
 };
 
 export async function getCiphers(senderID, recipientID) {
-    //Gets name of sender's and recipient's ciphers
+    //Gets name of sender and recipient's ciphers
     const senderCipherResponse = await fetch(`get-cipher/${senderID}`);
     const senderCipherData = await senderCipherResponse.json();
     

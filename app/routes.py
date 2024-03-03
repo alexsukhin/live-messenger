@@ -24,8 +24,6 @@ class RoutesManager():
 
     def signup(self, firstName, lastName, username, password):
 
-        existingUser = getUser(username)
-
         #If any existing checks return true, flashes error message and returns out of signup function
         if (
             self.userExists(username) or
@@ -106,15 +104,14 @@ class RoutesManager():
             return
 
         updateName(current_user.id, firstName, lastName)
-        flash("Successfully updated user's name!", category="success")
+        flash("Successfully updated the user's name!", category="success")
         return True
 
     def changeUsername(self, username):
-        existingUser = getUser(username)
 
         if (
             self.userExists(username) or
-            self.validateLength(username, 15, "Last name must be 25 characters or less.")
+            self.validateLength(username, 15, "Username must be 15 characters or less.")
         ):
             return
 

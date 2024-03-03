@@ -98,6 +98,7 @@ async function updateUser(recipientID) {
         //Generates AES key
         AESKey = await encryptionManager.generateAESKey();
 
+
         //Fetches sender public RSA key in preparation for encrypting sender AES Key
         const senderIDResponse = await fetch(`get-RSA-public-key/${senderID}`);
         const senderRSAPublicKey = await senderIDResponse.json().then(JSON.parse);
@@ -317,7 +318,7 @@ if (window.location.pathname == "/dashboard") {
 
         //Randomly generates IV
         const IV = crypto.getRandomValues(new Uint8Array(16));
-        const base64IV = await arrayBuffertoBase64(IV);
+        const base64IV = await arrayBuffertoBase64(IV)
 
 
         if (senderCipher == "XOR" && recipientCipher == "XOR") {
@@ -330,10 +331,11 @@ if (window.location.pathname == "/dashboard") {
                 const ArrayXORKey = await encryptionManager.deriveXORKey(senderHashedPassword, salt.buffer)
 
                 const textEncoder = new TextEncoder();
+
                 //Encrypts data using CBC decryption and converts data to array buffer
                 const encryptedContent = await encryptionManager.CBCEncrypt((textEncoder.encode(plaintext)), ArrayXORKey, IV)
 
-                //Emits message to flask server
+                //Emits message to flask server 
                 sessionSocket.emit('message', sessionID, recipientID, encryptedContent, dataFormat, cipher, base64IV, base64Salt);
 
             }
@@ -644,12 +646,15 @@ if (window.location.pathname == "/recommendations") {
     document.addEventListener("DOMContentLoaded", async () => {
 
         let data;
-    
+
         async function addConnections(root, isRoot, depth, maxDepth) {
+
+            //Returns out of the function if we have exceeded the max depth
             if (depth > maxDepth) {
                 return;
             }
-    
+
+            //Fetches the connections of the current node
             if (isRoot) {
                 const response = await fetch(`/get-connections/${root.value}`);
                 data = await response.json();
@@ -657,40 +662,37 @@ if (window.location.pathname == "/recommendations") {
                 const response = await fetch(`/get-connections/${root.value.userID}`);
                 data = await response.json();
             }
-    
+            
+            //Adds the connections of the current node to the tree and recursively calls to add
+            //the connections of each child to the tree
             for (const connection of data) {
                 const child = root.addChild(connection)
                 await addConnections(child, false, depth + 1, maxDepth)
             }
         }
-    
+
         const senderID = await getSenderID();
-    
-    
+
+
         const root = tree.addRoot(senderID)
         await addConnections(root, true, 0, 2)
         const recommendations = bfs(root)
 
         const recommendationsList = document.getElementById("recommendations-list");
 
-        
-
+        //Dynamically creates and pushes a user element of each new recommendation for the current user
         for (const recommendation of recommendations) {
 
             const chatUserElement = document.createElement("div");
             chatUserElement.className = "recommendation-user";
 
             const usernameElement = document.createElement("h");
-            const firstNameElement = document.createElement("h");   
-            const lastNameElement = document.createElement("h");
             const friendElement = document.createElement("h");
             const br = document.createElement("br");
             const hr = document.createElement("hr");
             const buttonElement = document.createElement("button");
 
             usernameElement.textContent = recommendation.value.username;
-            firstNameElement.textContent = recommendation.value.firstName;
-            lastNameElement.textContent = recommendation.value.lastName;
             friendElement.textContent = `Friend of ${recommendation.parent}`;
 
             buttonElement.className = "btn";
@@ -702,6 +704,8 @@ if (window.location.pathname == "/recommendations") {
             buttonElement.style.float = "right";
             buttonElement.style.marginTop = "-18px";
 
+            //Adds a click event listener to each individual recommendation to insert a connection with the recommended user
+            //and to refresh the page
             buttonElement.addEventListener("click", async (event) => {
                 event.preventDefault();
         
@@ -722,7 +726,7 @@ if (window.location.pathname == "/recommendations") {
         
             recommendationsList.appendChild(chatUserElement);
         }
-    
+
     });
 
-};
+    };

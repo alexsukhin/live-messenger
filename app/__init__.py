@@ -39,8 +39,6 @@ login_manager.login_view = "routes.login"
 @login_manager.user_loader
 def loadUser(userID):
 
-    print('test!')
-
     conn = mysql.connection
     cursor = conn.cursor()
 
