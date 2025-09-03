@@ -41,7 +41,7 @@ https://docs.google.com/document/d/1JwZWgNTPHxD1kzsmO1MAc2wr47BnGrvV4W-An7VltHU/
 
 Check out the demo of Live Messenger on YouTube:
 
-[Watch the demo on YouTube]([https://www.youtube.com/watch?v=IDvA0TmgDBk](https://www.youtube.com/watch?v=veE5JJDMINc))
+[Watch the demo on YouTube](https://www.youtube.com/watch?v=veE5JJDMINc)
 
 > Click the link to watch the full video on YouTube.
 
